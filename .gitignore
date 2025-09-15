@@ -1,0 +1,8 @@
+# Folders
+__pycache__/
+.github/
+.venv/
+.vscode/
+bank_statements/
+model_data/
+output/
