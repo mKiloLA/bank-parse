@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from data_types.DataTypes import Category
+from ..data.DataTypes import Category
 
 class CategoryPopup(tk.Toplevel):
     def __init__(self, master=None, desc_default: str = "", amount: float = 0.0, date: str = ""):

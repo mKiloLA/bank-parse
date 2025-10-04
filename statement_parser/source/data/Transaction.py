@@ -1,5 +1,3 @@
-
-from typing import Optional
 import datetime
 from .DataTypes import Bank, Category
 

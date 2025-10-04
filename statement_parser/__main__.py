@@ -1,12 +1,12 @@
 import tkinter as tk
 from tkinter import filedialog, scrolledtext
-import threading
 import os
 import sys
 sys.path.append(os.path.dirname(__file__))
-from ParseBankStatements import ParseBankStatements, Bank
-from CategoryPopup import CategoryPopup
-from GenerateOutput import GenerateOutput
+from .source.ParseBankStatements import ParseBankStatements
+from .source.gui.CategoryPopup import CategoryPopup
+from .source.GenerateOutput import GenerateOutput
+from .source.CategoryTargetHandler import CategoryTargetHandler
 
 class BankParseGUI(tk.Tk):
     def __init__(self):
@@ -58,7 +58,6 @@ class BankParseGUI(tk.Tk):
         main_pane.add(future_frame, stretch="always")
 
         # Add category target editor
-        from CategoryTargetHandler import CategoryTargetHandler
         self.target_handler = CategoryTargetHandler()
         self.target_entries = {}
         row = 0
@@ -115,6 +114,6 @@ class BankParseGUI(tk.Tk):
         self.terminal.insert(tk.END, message + "\n")
         self.terminal.see(tk.END)
 
-if __name__ == "__main__":
+def main():
     app = BankParseGUI()
     app.mainloop()

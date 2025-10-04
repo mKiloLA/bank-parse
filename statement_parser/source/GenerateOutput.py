@@ -2,17 +2,24 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.table import Table, TableStyleInfo
+import os
 from datetime import datetime
-from data_types.Statement import Statement
-from data_types.Transaction import Transaction
-from data_types.DataTypes import Category
 from typing import List
 from openpyxl.chart import PieChart, Reference, LineChart
-from openpyxl.styles import Alignment, Font, PatternFill
+from openpyxl.styles import Font, PatternFill
+
+from .data.Statement import Statement
+from .data.DataTypes import Category
+from .CategoryTargetHandler import CategoryTargetHandler
 
 class GenerateOutput:
     @staticmethod
     def create_excel(statements: List[Statement], output_path: str = "output/expenses.xlsx") -> None:
+        # Ensure output directory exists
+        output_dir = os.path.dirname(output_path)
+        if output_dir:
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir, exist_ok=True)
         def _gradient_color(ratio: float, color_type: str) -> str:
             # color_type: 'green' or 'red'
             ratio = max(min(ratio, 1.0), -1.0)
@@ -217,7 +224,6 @@ class GenerateOutput:
 
         # Category Summary Sheet
         # Prepare summary data
-        from CategoryTargetHandler import CategoryTargetHandler
         target_handler = CategoryTargetHandler()
         summary_header = ["Category", "Target Amount", "Total Spent", "% of Total Income"]
         summary_data = [summary_header]
@@ -239,12 +245,12 @@ class GenerateOutput:
             target_amt = target_handler.get_target(cat)
             total = abs(category_totals.get(cat, 0.0))
             percent_income = (total / total_income) if total_income > 0 else 0.0
-            summary_data.append([cat, target_amt, total, percent_income])
+            summary_data.append([cat, target_amt, total, percent_income]) # type: ignore
             total_target += target_amt
             total_spent += total
             total_percent_income += percent_income
         # Add Totals row
-        summary_data.append(["Totals", total_target, total_spent, total_percent_income])
+        summary_data.append(["Totals", total_target, total_spent, total_percent_income]) # type: ignore
 
         # Write summary data starting at B2
         totals_row_idx = 1 + len(summary_data)

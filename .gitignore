@@ -4,5 +4,5 @@ __pycache__/
 .venv/
 .vscode/
 bank_statements/
-model_data/
-output/
+user_data/
+build/

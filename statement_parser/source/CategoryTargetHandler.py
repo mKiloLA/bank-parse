@@ -1,12 +1,14 @@
 import csv
 import os
 from typing import Dict, Optional
-from data_types.DataTypes import Category
+
+from .data.DataTypes import Category
+from .Utilities import get_appdata_path
 
 class CategoryTargetHandler:
 	def __init__(self, csv_path: Optional[str] = None):
 		if csv_path is None:
-			csv_path = os.path.join(os.path.dirname(__file__), 'model_data', 'categoryTarget.csv')
+			csv_path = get_appdata_path('categoryTarget.csv')
 		self._csv_path = csv_path
 		self._targets: Dict[str, float] = {}
 		self._read_targets()

@@ -1,26 +1,26 @@
-import os
+import csv
 import datetime
+import math
+import os
 import pandas as pd
 from typing import Dict, Callable
-from data_types.DataTypes import Bank, Category
-from data_types.Statement import Statement
-from data_types.Transaction import Transaction
-import csv
-import math
+
+from .data.DataTypes import Bank, Category
+from .data.Statement import Statement
+from .data.Transaction import Transaction
+from .Utilities import get_appdata_path
 
 
 # Load descriptionToCategory.csv into a lookup dict once per run
-DESC_CAT_PATH: str = os.path.join(os.path.dirname(__file__), 'model_data', 'descriptionToCategory.csv')
+DescriptionToCategoryPath = get_appdata_path('descriptionToCategory.csv')
 desc_cat_map: dict[str, tuple[str, Category]] = {}
-
-# If file does not exist, create it with headers
-if not os.path.isfile(DESC_CAT_PATH):
-    with open(DESC_CAT_PATH, 'w', encoding='utf-8', newline='') as f:
+if not os.path.isfile(DescriptionToCategoryPath):
+    with open(DescriptionToCategoryPath, 'w', encoding='utf-8', newline='') as f:
         writer = csv.writer(f, delimiter=',', lineterminator='\n')
         writer.writerow(['description', 'title', 'category'])
         
-if os.path.isfile(DESC_CAT_PATH):
-    with open(DESC_CAT_PATH, newline='', encoding='utf-8') as f:
+if os.path.isfile(DescriptionToCategoryPath):
+    with open(DescriptionToCategoryPath, newline='', encoding='utf-8') as f:
         reader = csv.DictReader(f)
         for row in reader:
             desc = row.get('description', '').strip()
@@ -42,6 +42,7 @@ class ParseBankStatements:
         for bank in Bank:
             bank_filename = f"{bank.value}.csv"
             file_path = os.path.join(directory, bank_filename)
+
             if os.path.isfile(file_path):
                 bank_files[bank] = file_path
                 self.logger(f"Found statement for {bank.value}: {file_path}")
@@ -154,7 +155,8 @@ class ParseBankStatements:
                     note = row.get("Note", "")
                     from_person = str(row.get("From", "")).strip()
                     to_person = str(row.get("To", "")).strip()
-                    description = note.strip() if note and not math.isnan(note) else f"Venmo: {from_person} -> {to_person}"
+                    description = note if note and isinstance(note, str) else f"Venmo: {from_person} -> {to_person}"
+                    description = description.strip().lower()
 
                     category = Category.NONE
                     title = description
@@ -189,7 +191,7 @@ class ParseBankStatements:
                     desc_cat_map[new_description.strip().lower()] = (title, category)
                     
                     # Append to CSV file, always ensure a new line
-                    with open(DESC_CAT_PATH, 'a', encoding='utf-8') as csvfile:
+                    with open(DescriptionToCategoryPath, 'a', encoding='utf-8') as csvfile:
                         writer = csv.writer(csvfile, delimiter=',', lineterminator='\n')
                         writer.writerow([new_description.strip().lower(), title.strip(), category.value])
 
