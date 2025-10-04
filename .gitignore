@@ -6,3 +6,7 @@ __pycache__/
 bank_statements/
 user_data/
 build/
+dist/
+
+# Files
+StatementParser.spec
