@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import filedialog, scrolledtext
 import os
 import sys
+import platform
 sys.path.append(os.path.dirname(__file__))
 from .source.ParseBankStatements import ParseBankStatements
 from .source.gui.CategoryPopup import CategoryPopup
@@ -12,7 +13,7 @@ class BankParseGUI(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Bank Statement Parser")
-        self.geometry("1000x450")
+        self.geometry("1000x550")
         self.selected_folder = tk.StringVar()
         self.create_widgets()
 
@@ -104,7 +105,10 @@ class BankParseGUI(tk.Tk):
                 statements.append(statement)
 
             # Generate Excel output
-            output_path = os.path.join("output", "expenses.xlsx")
+            if platform.system() == "Darwin":
+                output_path = os.path.expanduser("~/Documents/StatementParser/combinedStatements.xlsx")
+            else:
+                output_path = os.path.join("output", "combinedStatements.xlsx")
             GenerateOutput.create_excel(statements, output_path)
             self.log_terminal(f"Parsing complete. Excel file generated at: {output_path}")
         except Exception as e:

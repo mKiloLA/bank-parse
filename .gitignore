@@ -7,6 +7,10 @@ bank_statements/
 user_data/
 build/
 dist/
+icon.iconset/
 
 # Files
+icon.png
+StatementParser.dmg
 StatementParser.spec
+.DS_Store

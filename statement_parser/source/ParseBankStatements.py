@@ -172,7 +172,7 @@ class ParseBankStatements:
                     title = str(row.get("Title", "")) if "Title" in row else ""
 
             # If category is NONE, try to look up by description
-            if category == Category.NONE and desc_cat_map:
+            if category == Category.NONE:
                 # Substring match: find first key in desc_cat_map that is contained in description
                 match_found = False
                 for dict_key in desc_cat_map:

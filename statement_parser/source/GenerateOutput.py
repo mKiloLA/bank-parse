@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import List
 from openpyxl.chart import PieChart, Reference, LineChart
 from openpyxl.styles import Font, PatternFill
+import platform
 
 from .data.Statement import Statement
 from .data.DataTypes import Category
@@ -14,8 +15,13 @@ from .CategoryTargetHandler import CategoryTargetHandler
 
 class GenerateOutput:
     @staticmethod
-    def create_excel(statements: List[Statement], output_path: str = "output/expenses.xlsx") -> None:
-        # Ensure output directory exists
+    def create_excel(statements: List[Statement], output_path: str = "") -> None:
+        # Accept output_path as Optional[str] for dynamic default
+        if not output_path:
+            if platform.system() == "Darwin":
+                output_path = os.path.expanduser("~/Documents/StatementParser/combinedStatements.xlsx")
+            else:
+                output_path = os.path.join("output", "combinedStatements.xlsx")
         output_dir = os.path.dirname(output_path)
         if output_dir:
             if not os.path.exists(output_dir):
