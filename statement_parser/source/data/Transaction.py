@@ -20,7 +20,7 @@ class Transaction:
 	# =============================
 	def is_purchase(self) -> bool:
 		"""Return True if the transaction is a purchase."""
-		return self._category != Category.INCOME and self._category != Category.NONE
+		return self._category not in (Category.INCOME, Category.IGNORE, Category.NONE)
 
 	def is_income(self) -> bool:
 		"""Return True if the transaction is income."""

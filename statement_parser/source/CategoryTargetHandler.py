@@ -19,12 +19,14 @@ class CategoryTargetHandler:
 				writer = csv.writer(f)
 				writer.writerow(['category', 'amount'])
 				for cat in Category:
-					if cat != Category.NONE:
+					if cat not in (Category.NONE, Category.IGNORE):
 						writer.writerow([cat.value, 0])
 		with open(self._csv_path, newline='', encoding='utf-8') as f:
 			reader = csv.DictReader(f)
 			for row in reader:
 				category = row['category']
+				if category == Category.IGNORE.value:
+					continue
 				try:
 					amount = float(row['amount'])
 				except (ValueError, TypeError):

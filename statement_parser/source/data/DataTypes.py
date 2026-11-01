@@ -23,4 +23,5 @@ class Category(Enum):
     OTHER = "Other"
     SAVINGS = "Savings"
     INCOME = "Income"
+    IGNORE = "Ignore"
     NONE = "None"

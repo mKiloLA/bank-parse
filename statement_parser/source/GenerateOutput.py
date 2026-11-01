@@ -1,27 +1,92 @@
+import csv
+import os
+import re
+from collections import Counter
+from typing import List, Optional, Sequence
+
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.table import Table, TableStyleInfo
-import os
-from datetime import datetime
-from typing import List
 from openpyxl.chart import PieChart, Reference, LineChart
 from openpyxl.styles import Font, PatternFill
-import platform
 
 from .data.Statement import Statement
-from .data.DataTypes import Category
+from .data.DataTypes import Bank, Category
 from .CategoryTargetHandler import CategoryTargetHandler
 
 class GenerateOutput:
     @staticmethod
-    def create_excel(statements: List[Statement], output_path: str = "") -> None:
-        # Accept output_path as Optional[str] for dynamic default
+    def output_filename(statements: Sequence[Statement]) -> str:
+        month_counts = Counter(
+            (transaction.date.year, transaction.date.month)
+            for statement in statements
+            for transaction in statement.transactions
+        )
+        if not month_counts:
+            return "CombinedStatement.xlsx"
+        year, month = max(
+            month_counts, key=lambda item: (month_counts[item], item)
+        )
+        return f"CombinedStatement_{year:04d}-{month:02d}.xlsx"
+
+    @staticmethod
+    def default_output_path(statements: Sequence[Statement]) -> str:
+        return os.path.join(
+            os.path.expanduser("~/StatementParser"),
+            GenerateOutput.output_filename(statements),
+        )
+
+    @staticmethod
+    def _unique_sheet_title(base_name: str, existing_names: set[str]) -> str:
+        safe_name = re.sub(r"[\[\]:*?/\\]", "_", base_name).strip(" '")
+        safe_name = (safe_name or "Statement")[:31]
+        candidate = safe_name
+        suffix_number = 2
+        while candidate.casefold() in existing_names:
+            suffix = f" ({suffix_number})"
+            candidate = f"{safe_name[:31 - len(suffix)]}{suffix}"
+            suffix_number += 1
+        existing_names.add(candidate.casefold())
+        return candidate
+
+    @staticmethod
+    def _add_source_csv_sheets(workbook, source_files: Sequence[tuple[Bank, str]]) -> None:
+        existing_names = {name.casefold() for name in workbook.sheetnames}
+        for bank, file_path in source_files:
+            base_name = (
+                bank.value
+                if bank != Bank.NONE
+                else os.path.splitext(os.path.basename(file_path))[0]
+            )
+            sheet = workbook.create_sheet(
+                GenerateOutput._unique_sheet_title(base_name, existing_names)
+            )
+            with open(file_path, newline="", encoding="utf-8-sig") as file:
+                sample = file.read(8192)
+                file.seek(0)
+                try:
+                    dialect = csv.Sniffer().sniff(sample, delimiters=",;\t")
+                except csv.Error:
+                    dialect = csv.excel
+
+                for row_number, row in enumerate(csv.reader(file, dialect), start=1):
+                    for column_number, value in enumerate(row, start=1):
+                        cell = sheet.cell(
+                            row=row_number, column=column_number, value=value
+                        )
+                        cell.data_type = "s"
+
+    @staticmethod
+    def create_excel(
+        statements: List[Statement],
+        output_path: str = "",
+        source_files: Optional[Sequence[tuple[Bank, str]]] = None,
+    ) -> None:
+        if source_files is not None and len(source_files) != len(statements):
+            raise ValueError("Provide one source CSV file for each statement.")
         if not output_path:
-            if platform.system() == "Darwin":
-                output_path = os.path.expanduser("~/Documents/StatementParser/combinedStatements.xlsx")
-            else:
-                output_path = os.path.join("output", "combinedStatements.xlsx")
+            output_path = GenerateOutput.default_output_path(statements)
         output_dir = os.path.dirname(output_path)
         if output_dir:
             if not os.path.exists(output_dir):
@@ -237,7 +302,7 @@ class GenerateOutput:
         
         for statement in statements:
             for t in statement.transactions:
-                if t.category not in [Category.NONE]:
+                if t.category not in (Category.NONE, Category.IGNORE):
                     category_totals[t.category.value] = category_totals.get(t.category.value, 0.0) + t.amount
 
         # Use all categories in target_handler for summary
@@ -492,4 +557,6 @@ class GenerateOutput:
                 if row == last_row:
                     cell.border = cell.border.copy(bottom=outside_border.bottom)
 
+        if source_files:
+            GenerateOutput._add_source_csv_sheets(wb, source_files)
         wb.save(output_path)
