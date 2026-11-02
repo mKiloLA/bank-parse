@@ -1,4 +1,3 @@
-import csv
 import os
 import tempfile
 import unittest
@@ -12,9 +11,13 @@ class ParseBankStatementsTests(unittest.TestCase):
     def setUp(self):
         self.temporary_directory = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary_directory.cleanup)
-        self.rules_path = os.path.join(self.temporary_directory.name, "rules.csv")
+        self.database_path = os.path.join(
+            self.temporary_directory.name, "category-rules.db"
+        )
         self.messages = []
-        self.parser = ParseBankStatements(self.messages.append, self.rules_path)
+        self.parser = ParseBankStatements(
+            self.messages.append, database_path=self.database_path
+        )
 
     def write_csv(self, filename, content):
         path = os.path.join(self.temporary_directory.name, filename)
@@ -124,12 +127,10 @@ class ParseBankStatementsTests(unittest.TestCase):
         self.assertEqual(statement.transactions[0].description, "Local Market")
 
     def test_uses_the_most_specific_existing_merchant_rule(self):
-        with open(self.rules_path, "w", newline="", encoding="utf-8") as file:
-            writer = csv.writer(file)
-            writer.writerow(["description", "title", "category"])
-            writer.writerow(["coffee", "Coffee", "Dining"])
-            writer.writerow(["coffee shop", "Coffee Shop", "Supermarket"])
-        self.parser = ParseBankStatements(self.messages.append, self.rules_path)
+        self.parser.save_category_rule("coffee", "Coffee", Category.DINING)
+        self.parser.save_category_rule(
+            "coffee shop", "Coffee Shop", Category.SUPERMARKET
+        )
         path = self.write_csv(
             "generic.csv",
             "Date,Description,Amount\n"
@@ -142,11 +143,58 @@ class ParseBankStatementsTests(unittest.TestCase):
         self.assertEqual(transaction.category, Category.SUPERMARKET)
         self.assertEqual(transaction.title, "Coffee Shop")
 
+    def test_bulk_rule_can_match_a_short_keyword_in_long_descriptions(self):
+        self.parser.save_category_rules(
+            {"google": ("Google", Category.UTILITIES)},
+            match_type="contains",
+        )
+        path = self.write_csv(
+            "generic.csv",
+            "Date,Description,Amount\n"
+            "2025-03-01,ACH Debit SERVICES GOOGLE 0910000012807524,-80.00\n"
+            "2025-03-02,GOOGLE FIBER PAYMENT,-60.00\n"
+            "2025-03-03,Other Utility Company,-20.00\n",
+        )
+
+        statement = self.parser.statement_from_file(None, path)
+
+        self.assertEqual(
+            [transaction.category for transaction in statement.transactions],
+            [Category.UTILITIES, Category.UTILITIES, Category.NONE],
+        )
+        self.assertEqual(
+            [transaction.title for transaction in statement.transactions],
+            ["Google", "Google", "Other Utility Company"],
+        )
+
+    def test_new_broad_rule_updates_matching_transactions_already_loaded(self):
+        path = self.write_csv(
+            "generic.csv",
+            "Date,Description,Amount\n"
+            "2025-03-01,ACH Debit SERVICES GOOGLE 0910000012807524,-80.00\n"
+            "2025-03-02,GOOGLE FIBER PAYMENT,-60.00\n"
+            "2025-03-03,Other Utility Company,-20.00\n",
+        )
+        statement = self.parser.statement_from_file(None, path)
+        self.parser.save_category_rules(
+            {"google": ("Google", Category.UTILITIES)},
+            match_type="contains",
+        )
+
+        self.parser.apply_category_rules([statement])
+
+        self.assertEqual(
+            [transaction.category for transaction in statement.transactions],
+            [Category.UTILITIES, Category.UTILITIES, Category.NONE],
+        )
+
     def test_new_rules_are_persisted_and_loaded_on_next_run(self):
         self.parser.save_category_rule(
             "  Local   Market ", "Groceries", Category.SUPERMARKET
         )
-        reloaded_parser = ParseBankStatements(self.messages.append, self.rules_path)
+        reloaded_parser = ParseBankStatements(
+            self.messages.append, database_path=self.database_path
+        )
         path = self.write_csv(
             "generic.csv",
             "Date,Description,Amount\n"
@@ -158,35 +206,73 @@ class ParseBankStatementsTests(unittest.TestCase):
         self.assertEqual(transaction.category, Category.SUPERMARKET)
         self.assertEqual(transaction.title, "Groceries")
 
-    def test_legacy_none_rule_is_migrated_to_ignore(self):
-        with open(self.rules_path, "w", newline="", encoding="utf-8") as file:
-            writer = csv.writer(file)
-            writer.writerow(["description", "title", "category"])
-            writer.writerow(["credit card payment", "Card payment", "None"])
-        parser = ParseBankStatements(self.messages.append, self.rules_path)
+    def test_custom_category_is_available_to_rules_and_imported_transactions(self):
+        self.parser.save_category("Pet Care", 250.0)
+        self.parser.save_category_rule(
+            "pet supply", "Pet Supplies", "Pet Care"
+        )
         path = self.write_csv(
             "generic.csv",
             "Date,Description,Amount\n"
-            "2025-03-01,Credit Card Payment,200.00\n",
+            "2025-03-01,Pet Supply Shop,-18.00\n",
         )
 
-        transaction = parser.statement_from_file(None, path).transactions[0]
+        transaction = self.parser.statement_from_file(None, path).transactions[0]
 
-        self.assertEqual(transaction.category, Category.IGNORE)
-        self.assertFalse(transaction.is_purchase())
-        self.assertFalse(transaction.is_income())
+        self.assertIn("Pet Care", self.parser.categories)
+        self.assertEqual(transaction.category, "Pet Care")
+        self.assertTrue(transaction.is_purchase())
+
+    def test_exact_rules_only_match_the_complete_normalized_description(self):
+        self.parser.save_category_rule(
+            "Local Market",
+            "Local Market",
+            Category.SUPERMARKET,
+            match_type="exact",
+        )
+        path = self.write_csv(
+            "generic.csv",
+            "Date,Description,Amount\n"
+            "2025-03-01, LOCAL   MARKET ,-8.00\n"
+            "2025-03-02,Local Market #52,-9.00\n",
+        )
+
+        statement = self.parser.statement_from_file(None, path)
+
+        self.assertEqual(statement.transactions[0].category, Category.SUPERMARKET)
+        self.assertEqual(statement.transactions[1].category, Category.NONE)
+
+    def test_rule_can_be_edited_and_deleted(self):
+        self.parser.save_category_rule(
+            "coffee", "Coffee", Category.DINING, match_type="exact"
+        )
+        self.parser.save_category_rule(
+            "cafeteria", "Cafe", Category.OTHER,
+            match_type="contains",
+            original_pattern="coffee",
+        )
+        self.assertEqual(
+            [(rule.pattern, rule.match_type) for rule in self.parser.category_rules],
+            [("cafeteria", "contains")],
+        )
+
+        self.parser.delete_category_rule("CAFETERIA")
+
+        self.assertEqual(self.parser.category_rules, [])
 
     def test_ignore_rules_are_reused_and_not_added_to_monthly_targets(self):
         self.parser.save_category_rule(
             "internal transfer", "Internal transfer", Category.IGNORE
         )
-        parser = ParseBankStatements(self.messages.append, self.rules_path)
+        parser = ParseBankStatements(
+            self.messages.append, database_path=self.database_path
+        )
         path = self.write_csv(
             "generic.csv",
             "Date,Description,Amount\n"
             "2025-03-01,Internal Transfer,200.00\n",
         )
-        target_path = os.path.join(self.temporary_directory.name, "targets.csv")
+        target_path = os.path.join(self.temporary_directory.name, "targets.db")
         targets = CategoryTargetHandler(target_path)
 
         transaction = parser.statement_from_file(None, path).transactions[0]

@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Union
 
 class Bank(Enum):
     CAPITAL_ONE = "CapitalOne"
@@ -25,3 +26,17 @@ class Category(Enum):
     INCOME = "Income"
     IGNORE = "Ignore"
     NONE = "None"
+
+
+CategoryValue = Union[Category, str]
+
+
+def category_name(category: CategoryValue) -> str:
+    return category.value if isinstance(category, Category) else category
+
+
+def category_from_name(name: str) -> CategoryValue:
+    try:
+        return Category(name)
+    except ValueError:
+        return name

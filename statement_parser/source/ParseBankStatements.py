@@ -3,29 +3,25 @@ import datetime
 import math
 import os
 import re
-import tempfile
-from typing import Callable, Dict, Iterable, Optional
+from typing import Callable, Dict, Iterable, Optional, Sequence
 
 import pandas as pd
 
-from .data.DataTypes import Bank, Category
+from .CategoryRuleStore import CategoryRule, CategoryRuleStore
+from .data.DataTypes import Bank, Category, CategoryValue
 from .data.Statement import Statement
 from .data.Transaction import Transaction
-from .Utilities import get_appdata_path
 
 
 class ParseBankStatements:
     def __init__(
         self,
         logger: Callable[[str], None],
-        category_rules_path: Optional[str] = None,
+        database_path: Optional[str] = None,
     ) -> None:
         self.logger = logger
-        self._category_rules_path = category_rules_path or get_appdata_path(
-            "descriptionToCategory.csv"
-        )
-        self._description_to_category: Dict[str, tuple[str, Category]] = {}
-        self._load_category_rules()
+        self._rule_store = CategoryRuleStore(database_path=database_path)
+        self._category_rules = self._rule_store.list_rules()
 
     @staticmethod
     def normalize_description(value: str) -> str:
@@ -34,28 +30,6 @@ class ParseBankStatements:
     @staticmethod
     def _normalize_header(value: str) -> str:
         return re.sub(r"[^a-z0-9]", "", value.casefold())
-
-    def _load_category_rules(self) -> None:
-        if not os.path.isfile(self._category_rules_path):
-            return
-
-        with open(self._category_rules_path, newline="", encoding="utf-8-sig") as file:
-            for row in csv.DictReader(file):
-                description = self.normalize_description(row.get("description", ""))
-                if not description:
-                    continue
-                category_value = row.get("category", "").strip()
-                if category_value == Category.NONE.value:
-                    category = Category.IGNORE
-                else:
-                    category = next(
-                        (item for item in Category if item.value == category_value),
-                        Category.NONE,
-                    )
-                self._description_to_category[description] = (
-                    row.get("title", "").strip(),
-                    category,
-                )
 
     def find_bank_statements(self, directory: str = "bank_statements") -> Dict[Bank, str]:
         """Find conventionally named statement files for older callers."""
@@ -189,56 +163,108 @@ class ParseBankStatements:
     def _empty(value: str) -> bool:
         return not str(value).strip()
 
-    def _find_category_rule(self, description: str) -> Optional[tuple[str, Category]]:
-        normalized = self.normalize_description(description)
-        matches = (
-            (key, value)
-            for key, value in self._description_to_category.items()
-            if key and key in normalized
+    def _find_category_rule(
+        self, description: str
+    ) -> Optional[tuple[str, CategoryValue]]:
+        matches = [
+            rule
+            for rule in self._category_rules
+            if self.category_rule_matches(
+                rule.pattern, description, rule.match_type
+            )
+        ]
+        match = max(
+            matches,
+            key=lambda rule: (rule.match_type == "exact", len(rule.pattern)),
+            default=None,
         )
-        match = max(matches, key=lambda item: len(item[0]), default=None)
-        return match[1] if match else None
+        return (match.title, match.category) if match else None
+
+    @classmethod
+    def category_rule_matches(
+        cls, pattern: str, description: str, match_type: str = "contains"
+    ) -> bool:
+        normalized_pattern = cls.normalize_description(pattern)
+        normalized_description = cls.normalize_description(description)
+        if match_type == "exact":
+            return normalized_pattern == normalized_description
+        if match_type == "contains":
+            return normalized_pattern in normalized_description
+        raise ValueError("Match type must be 'contains' or 'exact'.")
+
+    def apply_category_rules(self, statements: Sequence[Statement]) -> None:
+        for statement in statements:
+            for transaction in statement.transactions:
+                rule = self._find_category_rule(transaction.description)
+                if rule:
+                    transaction.title, transaction.category = rule
 
     def save_category_rule(
-        self, description: str, title: str, category: Category
+        self,
+        pattern: str,
+        title: str,
+        category: CategoryValue,
+        match_type: str = "contains",
+        original_pattern: Optional[str] = None,
     ) -> None:
-        self.save_category_rules({description: (title, category)})
+        self._rule_store.save_rule(
+            pattern, title, category, match_type, original_pattern
+        )
+        self._category_rules = self._rule_store.list_rules()
 
     def save_category_rules(
-        self, rules: Dict[str, tuple[str, Category]]
+        self,
+        rules: Dict[str, tuple[str, CategoryValue]],
+        match_type: str = "contains",
     ) -> None:
-        normalized_rules = {}
-        for description, (title, category) in rules.items():
-            normalized = self.normalize_description(description)
-            if not normalized:
-                raise ValueError(
-                    "A merchant description is required to save a category rule."
+        self._rule_store.save_rules(
+            [
+                CategoryRule(
+                    pattern=pattern,
+                    title=title,
+                    category=category,
+                    match_type=match_type,
                 )
-            if category == Category.NONE:
-                raise ValueError("Choose a category before saving a merchant rule.")
-            normalized_rules[normalized] = (title.strip(), category)
+                for pattern, (title, category) in rules.items()
+            ]
+        )
+        self._category_rules = self._rule_store.list_rules()
 
-        updated_rules = {**self._description_to_category, **normalized_rules}
-        temporary_path = None
-        try:
-            with tempfile.NamedTemporaryFile(
-                "w",
-                newline="",
-                encoding="utf-8",
-                dir=os.path.dirname(os.path.abspath(self._category_rules_path)),
-                delete=False,
-            ) as file:
-                temporary_path = file.name
-                writer = csv.writer(file, lineterminator="\n")
-                writer.writerow(["description", "title", "category"])
-                for key, (saved_title, saved_category) in updated_rules.items():
-                    writer.writerow([key, saved_title, saved_category.value])
-            os.replace(temporary_path, self._category_rules_path)
-        except OSError:
-            if temporary_path and os.path.exists(temporary_path):
-                os.unlink(temporary_path)
-            raise
-        self._description_to_category = updated_rules
+    @property
+    def category_rules(self) -> list[CategoryRule]:
+        return list(self._category_rules)
+
+    def delete_category_rule(self, pattern: str) -> None:
+        self._rule_store.delete_rule(pattern)
+        self._category_rules = self._rule_store.list_rules()
+
+    @property
+    def categories(self) -> list[str]:
+        return self._rule_store.list_categories()
+
+    def save_category(
+        self, name: str, amount: float, original_name: Optional[str] = None
+    ) -> None:
+        self._rule_store.save_category(name, amount, original_name)
+        self._category_rules = self._rule_store.list_rules()
+
+    def delete_category(self, name: str) -> None:
+        self._rule_store.delete_category(name)
+        self._category_rules = self._rule_store.list_rules()
+
+    def export_settings(self, destination_path: str) -> None:
+        self._rule_store.export_database(destination_path)
+
+    def import_settings(self, source_path: str) -> None:
+        self._rule_store.import_settings(source_path)
+        self._category_rules = self._rule_store.list_rules()
+
+    @property
+    def duplicate_policy(self) -> str:
+        return self._rule_store.get_duplicate_policy()
+
+    def set_duplicate_policy(self, policy: str) -> None:
+        self._rule_store.set_duplicate_policy(policy)
 
     def statement_from_file(
         self, bank: Optional[Bank], file_path: str

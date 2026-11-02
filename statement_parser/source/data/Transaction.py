@@ -1,5 +1,5 @@
 import datetime
-from .DataTypes import Bank, Category
+from .DataTypes import Bank, Category, CategoryValue
 
  # class to represent a single transaction
 class Transaction:
@@ -7,12 +7,12 @@ class Transaction:
 	# =============================
 	# Constructor
 	# =============================
-	def __init__(self, date: datetime.date, amount: float, description: str, bank: Bank, category: Category = Category.NONE, title: str = ""):
+	def __init__(self, date: datetime.date, amount: float, description: str, bank: Bank, category: CategoryValue = Category.NONE, title: str = ""):
 		self._date: datetime.date = date
 		self._amount: float = amount
 		self._description: str = description
 		self._title: str = title
-		self._category: Category = category
+		self._category: CategoryValue = category
 		self._bank: Bank = bank
 
 	# =============================
@@ -69,11 +69,11 @@ class Transaction:
 		self._description = value
 
 	@property
-	def category(self) -> Category:
+	def category(self) -> CategoryValue:
 		return self._category
 
 	@category.setter
-	def category(self, value: Category) -> None:
+	def category(self, value: CategoryValue) -> None:
 		self._category = value
 
 	@property

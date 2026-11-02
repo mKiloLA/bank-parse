@@ -1,3 +1,5 @@
 openpyxl
 pandas
 pyinstaller
+platformdirs
+tkinterdnd2

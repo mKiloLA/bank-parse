@@ -1,10 +1,21 @@
 import tkinter as tk
 from tkinter import ttk
+
 from ..data.DataTypes import Category
+from .theme import BACKGROUND, RoundedButton, configure_styles
+
 
 class CategoryPopup(tk.Toplevel):
-    def __init__(self, master=None, desc_default: str = "", amount: float = 0.0, date: str = ""):
+    def __init__(
+        self,
+        master=None,
+        desc_default: str = "",
+        amount: float = 0.0,
+        date: str = "",
+    ):
         super().__init__(master)
+        self.configure(background=BACKGROUND)
+        configure_styles(ttk.Style(self))
         self.title("Add New Item")
         popup_w, popup_h = 400, 250
         if master is not None:
@@ -23,15 +34,31 @@ class CategoryPopup(tk.Toplevel):
         self.title_var = tk.StringVar()
         self.cat_var = tk.StringVar()
         info_text = f"Add a category for the purchase at {desc_default} for {amount} on {date}."
-        tk.Label(self, text=info_text, wraplength=380, justify="left").pack(pady=10)
-        tk.Label(self, text="Description:").pack()
-        tk.Entry(self, textvariable=self.desc_var, width=40).pack()
-        tk.Label(self, text="Title:").pack()
-        tk.Entry(self, textvariable=self.title_var, width=40).pack()
-        tk.Label(self, text="Category:").pack()
-        cat_combo = ttk.Combobox(self, textvariable=self.cat_var, values=[c.value for c in Category], state="readonly")
+        ttk.Label(
+            self,
+            text=info_text,
+            wraplength=368,
+            justify="left",
+            style="Subtitle.TLabel",
+        ).pack(padx=16, pady=10)
+        ttk.Label(self, text="Description:").pack()
+        ttk.Entry(self, textvariable=self.desc_var, width=40).pack()
+        ttk.Label(self, text="Title:").pack()
+        ttk.Entry(self, textvariable=self.title_var, width=40).pack()
+        ttk.Label(self, text="Category:").pack()
+        cat_combo = ttk.Combobox(
+            self,
+            textvariable=self.cat_var,
+            values=[c.value for c in Category],
+            state="readonly",
+        )
         cat_combo.pack()
-        tk.Button(self, text="Submit", command=self.submit).pack(pady=10)
+        RoundedButton(
+            self,
+            text="Submit",
+            style="Primary.TButton",
+            command=self.submit,
+        ).pack(pady=10)
         self.protocol("WM_DELETE_WINDOW", self.submit)
 
     def submit(self):
