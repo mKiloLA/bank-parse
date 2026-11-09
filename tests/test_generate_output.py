@@ -37,12 +37,20 @@ class GenerateOutputTests(unittest.TestCase):
                 Bank.VENMO,
                 [
                     Transaction(
-                        date(2026, 9, 3), -12.0, "Lunch", Bank.VENMO,
-                        Category.DINING, "Lunch"
+                        date(2026, 9, 3),
+                        -12.0,
+                        "Lunch",
+                        Bank.VENMO,
+                        Category.DINING,
+                        "Lunch",
                     ),
                     Transaction(
-                        date(2026, 9, 4), -8.0, "Coffee", Bank.VENMO,
-                        Category.DINING, "Coffee"
+                        date(2026, 9, 4),
+                        -8.0,
+                        "Coffee",
+                        Bank.VENMO,
+                        Category.DINING,
+                        "Coffee",
                     ),
                 ],
             ),
@@ -50,8 +58,12 @@ class GenerateOutputTests(unittest.TestCase):
                 Bank.CITI,
                 [
                     Transaction(
-                        date(2026, 10, 1), -20.0, "Store", Bank.CITI,
-                        Category.OTHER, "Store"
+                        date(2026, 10, 1),
+                        -20.0,
+                        "Store",
+                        Bank.CITI,
+                        Category.OTHER,
+                        "Store",
                     )
                 ],
             ),
@@ -84,8 +96,12 @@ class GenerateOutputTests(unittest.TestCase):
                     Bank.VENMO,
                     [
                         Transaction(
-                            date(2026, 9, 3), -12.0, "Lunch", Bank.VENMO,
-                            Category.DINING, "Lunch"
+                            date(2026, 9, 3),
+                            -12.0,
+                            "Lunch",
+                            Bank.VENMO,
+                            Category.DINING,
+                            "Lunch",
                         )
                     ],
                 ),
@@ -93,8 +109,12 @@ class GenerateOutputTests(unittest.TestCase):
                     Bank.VENMO,
                     [
                         Transaction(
-                            date(2026, 9, 4), -8.0, "Coffee", Bank.VENMO,
-                            Category.DINING, "Coffee"
+                            date(2026, 9, 4),
+                            -8.0,
+                            "Coffee",
+                            Bank.VENMO,
+                            Category.DINING,
+                            "Coffee",
                         )
                     ],
                 ),
@@ -162,16 +182,28 @@ class GenerateOutputTests(unittest.TestCase):
                     Bank.CITI,
                     [
                         Transaction(
-                            date(2026, 9, 3), -100.0, "Rent", Bank.CITI,
-                            Category.MORTGAGE, "Rent"
+                            date(2026, 9, 3),
+                            -100.0,
+                            "Rent",
+                            Bank.CITI,
+                            Category.MORTGAGE,
+                            "Rent",
                         ),
                         Transaction(
-                            date(2026, 9, 4), 2000.0, "Pay", Bank.CITI,
-                            Category.INCOME, "Employer"
+                            date(2026, 9, 4),
+                            2000.0,
+                            "Pay",
+                            Bank.CITI,
+                            Category.INCOME,
+                            "Employer",
                         ),
                         Transaction(
-                            date(2026, 9, 5), -15.0, "Pet Store", Bank.CITI,
-                            "Pet Care", "Pet Store"
+                            date(2026, 9, 5),
+                            -15.0,
+                            "Pet Store",
+                            Bank.CITI,
+                            "Pet Care",
+                            "Pet Store",
                         ),
                     ],
                 ),
@@ -179,12 +211,20 @@ class GenerateOutputTests(unittest.TestCase):
                     Bank.CITI,
                     [
                         Transaction(
-                            date(2026, 10, 3), -50.0, "Rent", Bank.CITI,
-                            Category.MORTGAGE, "Rent"
+                            date(2026, 10, 3),
+                            -50.0,
+                            "Rent",
+                            Bank.CITI,
+                            Category.MORTGAGE,
+                            "Rent",
                         ),
                         Transaction(
-                            date(2026, 10, 4), 2000.0, "Pay", Bank.CITI,
-                            Category.INCOME, "Employer"
+                            date(2026, 10, 4),
+                            2000.0,
+                            "Pay",
+                            Bank.CITI,
+                            Category.INCOME,
+                            "Employer",
                         ),
                     ],
                 ),
@@ -268,7 +308,10 @@ class GenerateOutputTests(unittest.TestCase):
 
         self.assertEqual(len(loaded.transactions), 2)
         self.assertEqual(
-            {(transaction.title, transaction.amount) for transaction in loaded.transactions},
+            {
+                (transaction.title, transaction.amount)
+                for transaction in loaded.transactions
+            },
             {("Coffee Shop", -15.0), ("Employer", 2000.0)},
         )
 

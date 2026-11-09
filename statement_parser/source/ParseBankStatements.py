@@ -31,7 +31,9 @@ class ParseBankStatements:
     def _normalize_header(value: str) -> str:
         return re.sub(r"[^a-z0-9]", "", value.casefold())
 
-    def find_bank_statements(self, directory: str = "bank_statements") -> Dict[Bank, str]:
+    def find_bank_statements(
+        self, directory: str = "bank_statements"
+    ) -> Dict[Bank, str]:
         """Find conventionally named statement files for older callers."""
         bank_files: Dict[Bank, str] = {}
         for bank in Bank:
@@ -43,7 +45,9 @@ class ParseBankStatements:
 
     @staticmethod
     def _detect_bank(headers: Iterable[str]) -> Bank:
-        normalized = {ParseBankStatements._normalize_header(header) for header in headers}
+        normalized = {
+            ParseBankStatements._normalize_header(header) for header in headers
+        }
         if "datetime" in normalized and "amounttotal" in normalized:
             return Bank.VENMO
         if "transactiondate" in normalized and {"debit", "credit"} <= normalized:
@@ -52,7 +56,10 @@ class ParseBankStatements:
             return Bank.DISCOVER
         if "status" in normalized and {"date", "description"} <= normalized:
             return Bank.CITI
-        if "no" in normalized and {"date", "description", "debit", "credit"} <= normalized:
+        if (
+            "no" in normalized
+            and {"date", "description", "debit", "credit"} <= normalized
+        ):
             return Bank.COMMERCE
         return Bank.NONE
 
@@ -169,9 +176,7 @@ class ParseBankStatements:
         matches = [
             rule
             for rule in self._category_rules
-            if self.category_rule_matches(
-                rule.pattern, description, rule.match_type
-            )
+            if self.category_rule_matches(rule.pattern, description, rule.match_type)
         ]
         match = max(
             matches,
@@ -266,9 +271,7 @@ class ParseBankStatements:
     def set_duplicate_policy(self, policy: str) -> None:
         self._rule_store.set_duplicate_policy(policy)
 
-    def statement_from_file(
-        self, bank: Optional[Bank], file_path: str
-    ) -> Statement:
+    def statement_from_file(self, bank: Optional[Bank], file_path: str) -> Statement:
         """Parse a bank CSV using its headers, or standard Date/Description/Amount columns."""
         self.logger(f"Reading statement: {file_path}")
         header_row, delimiter = self._find_header_row(file_path)
@@ -283,11 +286,19 @@ class ParseBankStatements:
                 dtype=str,
                 keep_default_na=False,
             )
-        except (pd.errors.ParserError, pd.errors.EmptyDataError, UnicodeDecodeError) as error:
-            raise ValueError(f"Could not read {os.path.basename(file_path)}: {error}") from error
+        except (
+            pd.errors.ParserError,
+            pd.errors.EmptyDataError,
+            UnicodeDecodeError,
+        ) as error:
+            raise ValueError(
+                f"Could not read {os.path.basename(file_path)}: {error}"
+            ) from error
 
         if frame.empty and len(frame.columns) == 0:
-            raise ValueError(f"{os.path.basename(file_path)} does not contain a CSV header.")
+            raise ValueError(
+                f"{os.path.basename(file_path)} does not contain a CSV header."
+            )
 
         original_headers = [str(column).strip() for column in frame.columns]
         header_map = {
@@ -298,7 +309,9 @@ class ParseBankStatements:
 
         if bank == Bank.VENMO:
             date_column = self._column(header_map, ("datetime",), "date", file_path)
-            amount_column = self._column(header_map, ("amounttotal",), "amount", file_path)
+            amount_column = self._column(
+                header_map, ("amounttotal",), "amount", file_path
+            )
             description_column = header_map.get("note")
             debit_credit = False
             invert_amount = False
@@ -341,7 +354,9 @@ class ParseBankStatements:
                 "description",
                 file_path,
             )
-            amount_column = header_map.get("amount") or header_map.get("transactionamount")
+            amount_column = header_map.get("amount") or header_map.get(
+                "transactionamount"
+            )
             debit_credit = not amount_column and (
                 "debit" in header_map or "credit" in header_map
             )
@@ -356,7 +371,9 @@ class ParseBankStatements:
 
         transactions = []
         for index, row in frame.iterrows():
-            values = {str(key).strip(): str(value).strip() for key, value in row.items()}
+            values = {
+                str(key).strip(): str(value).strip() for key, value in row.items()
+            }
             if not any(values.values()):
                 continue
             row_number = int(index) + header_row + 2

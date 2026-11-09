@@ -28,8 +28,8 @@ class GenerateOutput:
     GRID = "D7E0E9"
     TEXT = "25364A"
     MUTED = "64758A"
-    CURRENCY_FORMAT = '$#,##0.00;[Red]($#,##0.00);$0.00'
-    PERCENT_FORMAT = '0.0%;[Red](0.0%);0.0%'
+    CURRENCY_FORMAT = "$#,##0.00;[Red]($#,##0.00);$0.00"
+    PERCENT_FORMAT = "0.0%;[Red](0.0%);0.0%"
 
     @staticmethod
     def output_filename(statements: Sequence[Statement]) -> str:
@@ -40,9 +40,7 @@ class GenerateOutput:
         )
         if not month_counts:
             return "CombinedStatement.xlsx"
-        year, month = max(
-            month_counts, key=lambda item: (month_counts[item], item)
-        )
+        year, month = max(month_counts, key=lambda item: (month_counts[item], item))
         return f"CombinedStatement_{year:04d}-{month:02d}.xlsx"
 
     @staticmethod
@@ -177,9 +175,7 @@ class GenerateOutput:
                 vertical="center",
                 wrap_text=True,
             )
-            cell.border = Border(
-                bottom=Side(style="thin", color=GenerateOutput.GRID)
-            )
+            cell.border = Border(bottom=Side(style="thin", color=GenerateOutput.GRID))
         sheet.row_dimensions[header_row].height = 30
 
         for row_offset, values in enumerate(rows, start=1):
@@ -196,9 +192,7 @@ class GenerateOutput:
                     bottom=Side(style="hair", color=GenerateOutput.GRID)
                 )
                 if row_offset % 2 == 0:
-                    cell.fill = PatternFill(
-                        fill_type="solid", fgColor="F5F8FB"
-                    )
+                    cell.fill = PatternFill(fill_type="solid", fgColor="F5F8FB")
                 header = headers[offset].casefold()
                 if "share" in header or "used" in header or "rate" in header:
                     cell.number_format = GenerateOutput.PERCENT_FORMAT
@@ -244,17 +238,17 @@ class GenerateOutput:
             for column in range(start_column, end_column + 1):
                 sheet.cell(row=row, column=column).fill = card_fill
         label_range = (
-            f"{get_column_letter(start_column)}5:"
-            f"{get_column_letter(end_column)}5"
+            f"{get_column_letter(start_column)}5:" f"{get_column_letter(end_column)}5"
         )
         value_range = (
-            f"{get_column_letter(start_column)}6:"
-            f"{get_column_letter(end_column)}7"
+            f"{get_column_letter(start_column)}6:" f"{get_column_letter(end_column)}7"
         )
         sheet.merge_cells(label_range)
         sheet.merge_cells(value_range)
         label_cell = sheet.cell(row=5, column=start_column, value=label.upper())
-        label_cell.font = Font(name="Aptos", size=9, bold=True, color=GenerateOutput.MUTED)
+        label_cell.font = Font(
+            name="Aptos", size=9, bold=True, color=GenerateOutput.MUTED
+        )
         label_cell.alignment = Alignment(horizontal="center", vertical="center")
         value_cell = sheet.cell(row=6, column=start_column, value=value)
         value_cell.font = Font(
@@ -428,8 +422,7 @@ class GenerateOutput:
             key = (year, month)
             month_income = abs(monthly_income_totals.get(key, 0.0))
             month_spending = sum(
-                abs(amount)
-                for amount in monthly_category_totals.get(key, {}).values()
+                abs(amount) for amount in monthly_category_totals.get(key, {}).values()
             )
             monthly_rows.append(
                 (
@@ -484,7 +477,9 @@ class GenerateOutput:
         subtitle.alignment = Alignment(vertical="center")
         dashboard.row_dimensions[2].height = 23
         dashboard.merge_cells("B3:M3")
-        review_amount = sum(abs(float(transaction.amount)) for transaction in needs_review)
+        review_amount = sum(
+            abs(float(transaction.amount)) for transaction in needs_review
+        )
         review_text = (
             f"Review needed: {len(needs_review)} uncategorized transaction(s), "
             f"{review_amount:,.2f} in activity."
@@ -495,22 +490,44 @@ class GenerateOutput:
         review_cell.value = review_text
         review_cell.fill = PatternFill(
             fill_type="solid",
-            fgColor=GenerateOutput.LIGHT_AMBER if needs_review else GenerateOutput.LIGHT_TEAL,
+            fgColor=GenerateOutput.LIGHT_AMBER
+            if needs_review
+            else GenerateOutput.LIGHT_TEAL,
         )
         review_cell.font = Font(name="Aptos", size=10, color=GenerateOutput.TEXT)
         review_cell.alignment = Alignment(vertical="center", indent=1)
         dashboard.row_dimensions[3].height = 24
         GenerateOutput._write_kpi(
-            dashboard, 2, 4, "Total Income", total_income, GenerateOutput.CURRENCY_FORMAT
+            dashboard,
+            2,
+            4,
+            "Total Income",
+            total_income,
+            GenerateOutput.CURRENCY_FORMAT,
         )
         GenerateOutput._write_kpi(
-            dashboard, 5, 7, "Total Spending", total_spending, GenerateOutput.CURRENCY_FORMAT
+            dashboard,
+            5,
+            7,
+            "Total Spending",
+            total_spending,
+            GenerateOutput.CURRENCY_FORMAT,
         )
         GenerateOutput._write_kpi(
-            dashboard, 8, 10, "Net Cash Flow", net_cash_flow, GenerateOutput.CURRENCY_FORMAT
+            dashboard,
+            8,
+            10,
+            "Net Cash Flow",
+            net_cash_flow,
+            GenerateOutput.CURRENCY_FORMAT,
         )
         GenerateOutput._write_kpi(
-            dashboard, 11, 13, "Savings Rate", savings_rate, GenerateOutput.PERCENT_FORMAT
+            dashboard,
+            11,
+            13,
+            "Savings Rate",
+            savings_rate,
+            GenerateOutput.PERCENT_FORMAT,
         )
         dashboard.row_dimensions[5].height = 21
         dashboard.row_dimensions[6].height = 25
@@ -635,13 +652,13 @@ class GenerateOutput:
             budget_chart.legend.position = "r"
             budget_chart.visible_cells_only = False
             if len(budget_chart.series) >= 2:
-                budget_chart.series[0].graphicalProperties.solidFill = GenerateOutput.TEAL
+                budget_chart.series[
+                    0
+                ].graphicalProperties.solidFill = GenerateOutput.TEAL
                 budget_chart.series[1].graphicalProperties.solidFill = "AAB8C6"
             dashboard.add_chart(budget_chart, f"H{chart_top}")
 
-        nonzero_categories = [
-            row for row in category_rows if row[3] > 0
-        ]
+        nonzero_categories = [row for row in category_rows if row[3] > 0]
         if nonzero_categories:
             pie_chart = DoughnutChart()
             pie_chart.style = 10
@@ -753,9 +770,7 @@ class GenerateOutput:
         if dashboard.sheet_view.selection:
             dashboard.sheet_view.selection[0].activeCell = "A1"
             dashboard.sheet_view.selection[0].sqref = "A1"
-        dashboard.print_area = (
-            f"B1:M{max(trend_table_end, daily_chart_row + 20)}"
-        )
+        dashboard.print_area = f"B1:M{max(trend_table_end, daily_chart_row + 20)}"
 
         # Category detail and income plan
         GenerateOutput._write_title(summary, "B1:M1", "CATEGORY AND INCOME SUMMARY")
@@ -878,9 +893,7 @@ class GenerateOutput:
         GenerateOutput._write_title(
             transactions_sheet, "B1:F1", "PURCHASES AND EXPENSES"
         )
-        GenerateOutput._write_title(
-            transactions_sheet, "H1:L1", "INCOME TRANSACTIONS"
-        )
+        GenerateOutput._write_title(transactions_sheet, "H1:L1", "INCOME TRANSACTIONS")
         expense_rows = []
         running_total = 0.0
         for transaction in sorted(expenses, key=lambda item: item.date):
@@ -926,7 +939,9 @@ class GenerateOutput:
             cell.alignment = Alignment(horizontal="center", vertical="center")
         for row_number, values in enumerate(expense_rows, start=3):
             for column, value in enumerate(values, start=2):
-                cell = transactions_sheet.cell(row=row_number, column=column, value=value)
+                cell = transactions_sheet.cell(
+                    row=row_number, column=column, value=value
+                )
                 cell.alignment = Alignment(vertical="center")
                 if column == 3:
                     cell.number_format = "mm/dd/yyyy"
@@ -934,7 +949,9 @@ class GenerateOutput:
                     cell.number_format = GenerateOutput.CURRENCY_FORMAT
         for row_number, values in enumerate(income_rows_detail, start=3):
             for column, value in enumerate(values, start=8):
-                cell = transactions_sheet.cell(row=row_number, column=column, value=value)
+                cell = transactions_sheet.cell(
+                    row=row_number, column=column, value=value
+                )
                 cell.alignment = Alignment(vertical="center")
                 if column == 9:
                     cell.number_format = "mm/dd/yyyy"
@@ -1030,9 +1047,7 @@ class GenerateOutput:
         overview.column_dimensions["A"].width = 3
         for column in range(2, 17):
             overview.column_dimensions[get_column_letter(column)].width = 16
-        GenerateOutput._write_title(
-            overview, "B1:P1", "HISTORY AND TRENDS OVERVIEW"
-        )
+        GenerateOutput._write_title(overview, "B1:P1", "HISTORY AND TRENDS OVERVIEW")
         overview.merge_cells("B2:P2")
         overview["B2"] = (
             f"Reporting period: {month_label} | "
@@ -1050,11 +1065,41 @@ class GenerateOutput:
             candidate.amount for candidate in analysis.subscriptions
         )
         for start_column, end_column, label, value, number_format in (
-            (2, 4, "Total Income", analysis.total_income, GenerateOutput.CURRENCY_FORMAT),
-            (5, 7, "Total Spending", analysis.total_spending, GenerateOutput.CURRENCY_FORMAT),
-            (8, 10, "Average Monthly Spending", average_spending, GenerateOutput.CURRENCY_FORMAT),
-            (11, 13, "Net Cash Flow", analysis.total_income - analysis.total_spending, GenerateOutput.CURRENCY_FORMAT),
-            (14, 16, "Potential Monthly Subscriptions", monthly_subscriptions, GenerateOutput.CURRENCY_FORMAT),
+            (
+                2,
+                4,
+                "Total Income",
+                analysis.total_income,
+                GenerateOutput.CURRENCY_FORMAT,
+            ),
+            (
+                5,
+                7,
+                "Total Spending",
+                analysis.total_spending,
+                GenerateOutput.CURRENCY_FORMAT,
+            ),
+            (
+                8,
+                10,
+                "Average Monthly Spending",
+                average_spending,
+                GenerateOutput.CURRENCY_FORMAT,
+            ),
+            (
+                11,
+                13,
+                "Net Cash Flow",
+                analysis.total_income - analysis.total_spending,
+                GenerateOutput.CURRENCY_FORMAT,
+            ),
+            (
+                14,
+                16,
+                "Potential Monthly Subscriptions",
+                monthly_subscriptions,
+                GenerateOutput.CURRENCY_FORMAT,
+            ),
         ):
             GenerateOutput._write_kpi(
                 overview, start_column, end_column, label, value, number_format
@@ -1205,7 +1250,9 @@ class GenerateOutput:
         plotting_data.cell(row=1, column=6, value="Category")
         plotting_data.cell(row=1, column=7, value="Increasing")
         plotting_data.cell(row=1, column=8, value="Decreasing")
-        for row_number, item in enumerate(analysis.category_history, start=trend_data_start):
+        for row_number, item in enumerate(
+            analysis.category_history, start=trend_data_start
+        ):
             plotting_data.cell(row=row_number, column=6, value=item.category)
             plotting_data.cell(
                 row=row_number,
@@ -1251,10 +1298,14 @@ class GenerateOutput:
             trend_chart.legend.position = "r"
             trend_chart.visible_cells_only = False
             if len(trend_chart.series) >= 2:
-                trend_chart.series[0].graphicalProperties.solidFill = GenerateOutput.TEAL
+                trend_chart.series[
+                    0
+                ].graphicalProperties.solidFill = GenerateOutput.TEAL
                 trend_chart.series[1].graphicalProperties.solidFill = "D66B6B"
             trends.add_chart(trend_chart, "G3")
-        trend_print_end_column = max(15 if has_trend_chart else 5, 2 + len(analysis.months))
+        trend_print_end_column = max(
+            15 if has_trend_chart else 5, 2 + len(analysis.months)
+        )
         trends.print_area = (
             f"B1:{get_column_letter(trend_print_end_column)}{matrix_end}"
         )
@@ -1271,9 +1322,7 @@ class GenerateOutput:
             )
             for item in analysis.subscriptions
         ]
-        GenerateOutput._write_title(
-            subscriptions, "B1:H1", "LIKELY SUBSCRIPTIONS"
-        )
+        GenerateOutput._write_title(subscriptions, "B1:H1", "LIKELY SUBSCRIPTIONS")
         subscriptions.merge_cells("B2:H2")
         subscriptions["B2"] = (
             "Candidates appear in at least 3 distinct months with the same merchant "
@@ -1351,7 +1400,9 @@ class GenerateOutput:
         }.items():
             transactions_sheet.column_dimensions[column].width = width
         for row_number in range(5, transaction_end + 1):
-            transactions_sheet.cell(row=row_number, column=2).number_format = "mmm d, yyyy"
+            transactions_sheet.cell(
+                row=row_number, column=2
+            ).number_format = "mmm d, yyyy"
             transactions_sheet.cell(row=row_number, column=3).number_format = "mmm yyyy"
         transactions_sheet.freeze_panes = "D5"
         transactions_sheet.print_area = f"B1:G{max(transaction_end, 5)}"

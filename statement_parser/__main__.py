@@ -1,7 +1,6 @@
 import colorsys
 import os
 import sqlite3
-import sys
 import tkinter as tk
 from zipfile import BadZipFile
 from datetime import datetime
@@ -9,8 +8,6 @@ from tkinter import filedialog, messagebox, ttk
 
 from openpyxl.utils.exceptions import InvalidFileException
 from tkinterdnd2 import COPY, DND_FILES, TkinterDnD
-
-sys.path.append(os.path.dirname(__file__))
 
 from .source.CategoryTargetHandler import CategoryTargetHandler
 from .source.GenerateOutput import GenerateOutput
@@ -29,7 +26,6 @@ from .source.gui.theme import (
     ACCENT,
     BACKGROUND,
     BORDER,
-    LOG_BACKGROUND,
     METRIC_BUDGET,
     METRIC_SPENT,
     RoundedButton,
@@ -78,6 +74,7 @@ class BankParseGUI(TkinterDnD.Tk):
         self.history_analysis_statements: list[Statement] = []
         self.history_duplicates_reviewed = False
         self.history_category_visibility = {}
+        self.monthly_category_visibility = {}
         self._category_rules_refresh = None
         self._category_targets_refresh = None
         self.category_var = tk.StringVar()
@@ -88,7 +85,9 @@ class BankParseGUI(TkinterDnD.Tk):
         self.header_subtitle_var = tk.StringVar(
             value="Choose or drop CSV files, review new merchants, and export your spending."
         )
-        self.summary_var = tk.StringVar(value="Choose statement CSV files to get started.")
+        self.summary_var = tk.StringVar(
+            value="Choose statement CSV files to get started."
+        )
         self.status_var = tk.StringVar(value="Ready")
         self.transaction_search_var = tk.StringVar()
         self.transaction_category_filter_var = tk.StringVar(value="All Categories")
@@ -178,9 +177,7 @@ class BankParseGUI(TkinterDnD.Tk):
         self.workspace.rowconfigure(0, weight=1)
         review_page = ttk.Frame(self.workspace, style="App.TFrame")
         overview_page = ttk.Frame(self.workspace, style="App.TFrame", padding=20)
-        self.history_page = ttk.Frame(
-            self.workspace, style="App.TFrame"
-        )
+        self.history_page = ttk.Frame(self.workspace, style="App.TFrame")
         workspace_pages = (
             ("Transactions & Review", review_page),
             ("Monthly Overview", overview_page),
@@ -218,9 +215,7 @@ class BankParseGUI(TkinterDnD.Tk):
         transaction_card = ttk.Frame(
             transaction_surface.content, style="Card.TFrame", padding=20
         )
-        review_card = ttk.Frame(
-            review_surface.content, style="Card.TFrame", padding=20
-        )
+        review_card = ttk.Frame(review_surface.content, style="Card.TFrame", padding=20)
         transaction_card.pack(fill=tk.BOTH, expand=True)
         review_card.pack(fill=tk.BOTH, expand=True)
         content.add(transaction_surface, weight=7)
@@ -254,9 +249,7 @@ class BankParseGUI(TkinterDnD.Tk):
             )
             marker = "*" if active else ""
             arrow = "▲" if filters_expanded else "▼"
-            filter_toggle_button.configure(
-                text=f"Search & Filters{marker} {arrow}"
-            )
+            filter_toggle_button.configure(text=f"Search & Filters{marker} {arrow}")
 
         def toggle_filters():
             nonlocal filters_expanded
@@ -280,12 +273,8 @@ class BankParseGUI(TkinterDnD.Tk):
         filter_toggle_button.grid(row=0, column=0, sticky="w")
         self._update_transaction_filter_button = update_filter_toggle
 
-        search_label = ttk.Label(
-            filter_frame, text="Search", style="Muted.TLabel"
-        )
-        search_label.grid(
-            row=0, column=1, sticky="e", padx=(8, 8)
-        )
+        search_label = ttk.Label(filter_frame, text="Search", style="Muted.TLabel")
+        search_label.grid(row=0, column=1, sticky="e", padx=(8, 8))
         search_entry = ttk.Entry(
             filter_frame,
             textvariable=self.transaction_search_var,
@@ -301,9 +290,7 @@ class BankParseGUI(TkinterDnD.Tk):
             state="readonly",
             width=15,
         )
-        self.transaction_category_filter.grid(
-            row=0, column=0, sticky="ew", padx=(0, 8)
-        )
+        self.transaction_category_filter.grid(row=0, column=0, sticky="ew", padx=(0, 8))
         self.transaction_source_filter = ttk.Combobox(
             filters_panel,
             textvariable=self.transaction_source_filter_var,
@@ -311,9 +298,7 @@ class BankParseGUI(TkinterDnD.Tk):
             state="readonly",
             width=11,
         )
-        self.transaction_source_filter.grid(
-            row=0, column=1, sticky="ew", padx=(0, 8)
-        )
+        self.transaction_source_filter.grid(row=0, column=1, sticky="ew", padx=(0, 8))
         self.transaction_month_filter = ttk.Combobox(
             filters_panel,
             textvariable=self.transaction_month_filter_var,
@@ -321,9 +306,7 @@ class BankParseGUI(TkinterDnD.Tk):
             state="readonly",
             width=9,
         )
-        self.transaction_month_filter.grid(
-            row=0, column=2, sticky="ew"
-        )
+        self.transaction_month_filter.grid(row=0, column=2, sticky="ew")
         RoundedButton(
             filters_panel,
             text="Clear Filters",
@@ -374,9 +357,9 @@ class BankParseGUI(TkinterDnD.Tk):
 
         review_card.columnconfigure(0, weight=1)
         review_card.rowconfigure(2, weight=1)
-        ttk.Label(
-            review_card, text="Review Merchants", style="CardTitle.TLabel"
-        ).grid(row=0, column=0, sticky="w")
+        ttk.Label(review_card, text="Review Merchants", style="CardTitle.TLabel").grid(
+            row=0, column=0, sticky="w"
+        )
         ttk.Label(
             review_card,
             text="Choose a category, or Ignore transfers and payments you don't want counted.",
@@ -397,9 +380,7 @@ class BankParseGUI(TkinterDnD.Tk):
         self.review_tree.heading("count", text="#", anchor="center")
         self.review_tree.heading("total", text="Total", anchor="center")
         self.review_tree.column("merchant", width=150, minwidth=100)
-        self.review_tree.column(
-            "bank", width=115, minwidth=80, anchor="center"
-        )
+        self.review_tree.column("bank", width=115, minwidth=80, anchor="center")
         self.review_tree.column("count", width=45, minwidth=38, anchor="center")
         self.review_tree.column("total", width=90, minwidth=70, anchor="e")
         review_scroll = ttk.Scrollbar(
@@ -410,9 +391,9 @@ class BankParseGUI(TkinterDnD.Tk):
         review_scroll.grid(row=2, column=1, sticky="ns")
         self.review_tree.bind("<<TreeviewSelect>>", self._select_review_group)
 
-        ttk.Label(
-            review_card, text="Category", style="CardTitle.TLabel"
-        ).grid(row=3, column=0, sticky="w", pady=(16, 5))
+        ttk.Label(review_card, text="Category", style="CardTitle.TLabel").grid(
+            row=3, column=0, sticky="w", pady=(16, 5)
+        )
         self.category_combo = ttk.Combobox(
             review_card,
             textvariable=self.category_var,
@@ -426,9 +407,9 @@ class BankParseGUI(TkinterDnD.Tk):
         ttk.Label(
             rule_frame, text="Rule Match Text (Optional)", style="CardTitle.TLabel"
         ).grid(row=0, column=0, sticky="w", padx=(0, 8))
-        ttk.Label(
-            rule_frame, text="Match Type", style="CardTitle.TLabel"
-        ).grid(row=0, column=1, sticky="w")
+        ttk.Label(rule_frame, text="Match Type", style="CardTitle.TLabel").grid(
+            row=0, column=1, sticky="w"
+        )
         ttk.Entry(rule_frame, textvariable=self.rule_pattern_var).grid(
             row=1, column=0, sticky="ew", padx=(0, 8)
         )
@@ -466,9 +447,9 @@ class BankParseGUI(TkinterDnD.Tk):
 
         status_bar = ttk.Frame(shell, style="App.TFrame")
         status_bar.grid(row=4, column=0, sticky="ew", pady=(12, 0))
-        ttk.Label(status_bar, textvariable=self.status_var, style="Subtitle.TLabel").pack(
-            side=tk.LEFT
-        )
+        ttk.Label(
+            status_bar, textvariable=self.status_var, style="Subtitle.TLabel"
+        ).pack(side=tk.LEFT)
         self._create_monthly_overview(overview_page)
         self._create_history_page(self.history_page)
         self._update_transaction_filter_options()
@@ -485,8 +466,10 @@ class BankParseGUI(TkinterDnD.Tk):
         return self._selected_workspace_page is self.history_page
 
     def _update_file_summary(self):
-        count = len(self.history_files) if self._is_history_tab_selected() else len(
-            self.selected_files
+        count = (
+            len(self.history_files)
+            if self._is_history_tab_selected()
+            else len(self.selected_files)
         )
         self.file_summary_var.set(f"Manage Files ({count})")
 
@@ -558,15 +541,11 @@ class BankParseGUI(TkinterDnD.Tk):
             highlightthickness=0,
             width=5,
         )
-        accent_bar.grid(
-            row=0, column=0, rowspan=2, sticky="ns", padx=(0, 12)
-        )
+        accent_bar.grid(row=0, column=0, rowspan=2, sticky="ns", padx=(0, 12))
         title_options = {"style": "Muted.TLabel"}
         if title_wraplength is not None:
             title_options["wraplength"] = title_wraplength
-        ttk.Label(card, text=title, **title_options).grid(
-            row=0, column=1, sticky="w"
-        )
+        ttk.Label(card, text=title, **title_options).grid(row=0, column=1, sticky="w")
         value_var = tk.StringVar(value=initial_value)
         value_label = ttk.Label(
             card,
@@ -616,15 +595,15 @@ class BankParseGUI(TkinterDnD.Tk):
         self.overview_metric_values = {}
         self.overview_metric_labels = {}
         self.overview_metric_accent_bars = {}
-        for column, (key, title, initial_value, accent) in enumerate(
-            (
-                ("spent", "Total Spent", "$0.00", METRIC_SPENT),
-                ("budget", "Budgeted", "$0.00", METRIC_BUDGET),
-                ("remaining", "Budget Remaining", "$0.00 left", STATUS_UNDER),
-                ("income", "Income", "$0.00", ACCENT),
-                ("net", "Net Income", "$0.00", STATUS_UNDER),
-            )
-        ):
+        monthly_metrics = (
+            ("spent", "Total Spent", "$0.00", METRIC_SPENT),
+            ("income", "Income", "$0.00", ACCENT),
+            ("net", "Net Income", "$0.00", STATUS_UNDER),
+            ("budget", "Budgeted", "$0.00", METRIC_BUDGET),
+            ("unbudgeted", "Unbudgeted Income", "$0.00", ACCENT),
+            ("remaining", "Budget Remaining", "$0.00 left", STATUS_UNDER),
+        )
+        for column, (key, title, initial_value, accent) in enumerate(monthly_metrics):
             metrics.columnconfigure(
                 column, weight=1, uniform="monthly-overview-metrics"
             )
@@ -646,6 +625,7 @@ class BankParseGUI(TkinterDnD.Tk):
         self.overview_remaining_var = self.overview_metric_values["remaining"]
         self.overview_income_var = self.overview_metric_values["income"]
         self.overview_net_income_var = self.overview_metric_values["net"]
+        self.overview_unbudgeted_var = self.overview_metric_values["unbudgeted"]
 
         self.overview_message_var = tk.StringVar()
         ttk.Label(
@@ -653,6 +633,10 @@ class BankParseGUI(TkinterDnD.Tk):
             textvariable=self.overview_message_var,
             style="Subtitle.TLabel",
         ).grid(row=2, column=0, sticky="w", pady=(0, 8))
+        result_tabs = ttk.Frame(parent, style="App.TFrame")
+        result_tabs.grid(row=3, column=0, sticky="ew", pady=(0, 8))
+        result_tabs.columnconfigure(0, weight=1, uniform="monthly-tabs")
+        result_tabs.columnconfigure(1, weight=1, uniform="monthly-tabs")
         self.overview_table_surface = RoundedCard(
             parent,
             background=SURFACE,
@@ -661,10 +645,60 @@ class BankParseGUI(TkinterDnD.Tk):
             height=420,
             inset=8,
         )
-        self.overview_table_surface.grid(row=3, column=0, sticky="nsew")
-        table_frame = ttk.Frame(
+        self.overview_table_surface.grid(row=4, column=0, sticky="nsew")
+        self.monthly_results = ttk.Frame(
             self.overview_table_surface.content, style="Card.TFrame"
         )
+        self.monthly_results.pack(fill=tk.BOTH, expand=True)
+        self.monthly_results.columnconfigure(0, weight=1)
+        self.monthly_results.rowconfigure(0, weight=1)
+        overview_results_page = ttk.Frame(
+            self.monthly_results, style="Card.TFrame", padding=8
+        )
+        chart_results_page = ttk.Frame(
+            self.monthly_results, style="Card.TFrame", padding=8
+        )
+        for page in (overview_results_page, chart_results_page):
+            page.grid(row=0, column=0, sticky="nsew")
+        self.monthly_overview_results_page = overview_results_page
+        self.monthly_chart_results_page = chart_results_page
+        self.monthly_chart_results_page.columnconfigure(0, weight=1)
+        self.monthly_chart_results_page.rowconfigure(0, weight=1)
+        self.monthly_category_chart = tk.Canvas(
+            self.monthly_chart_results_page,
+            background=SURFACE,
+            height=1,
+            highlightthickness=0,
+            borderwidth=0,
+        )
+        self.monthly_category_chart.grid(row=0, column=0, sticky="nsew")
+        self.monthly_category_chart.bind(
+            "<Configure>",
+            lambda _event: self._draw_monthly_category_chart(),
+            add="+",
+        )
+        self.monthly_result_tab_buttons = []
+        for column, (title, page) in enumerate(
+            (
+                ("Overview", overview_results_page),
+                ("Trend Graph", chart_results_page),
+            )
+        ):
+            button = RoundedButton(
+                result_tabs,
+                text=title,
+                style="Tab.TButton",
+                command=lambda selected_page=page: self._select_monthly_results_page(
+                    selected_page
+                ),
+                height=42,
+            )
+            button.grid(row=0, column=column, sticky="ew", padx=(0, 8))
+            self.monthly_result_tab_buttons.append((button, page))
+        self._selected_monthly_results_page = overview_results_page
+        overview_results_page.tkraise()
+        self.monthly_result_tab_buttons[0][0].set_selected(True)
+        table_frame = ttk.Frame(overview_results_page, style="Card.TFrame")
         table_frame.pack(fill=tk.BOTH, expand=True)
         table_frame.columnconfigure(0, weight=1)
         table_frame.rowconfigure(2, weight=1)
@@ -685,9 +719,7 @@ class BankParseGUI(TkinterDnD.Tk):
                 self._overview_column_weights,
             )
         ):
-            header.columnconfigure(
-                column, weight=weight, uniform="monthly-overview"
-            )
+            header.columnconfigure(column, weight=weight, uniform="monthly-overview")
             label = ttk.Label(
                 header,
                 text=title,
@@ -765,9 +797,7 @@ class BankParseGUI(TkinterDnD.Tk):
         header_spacer.grid(row=0, column=4, sticky="ns")
         header_spacer.grid_propagate(False)
         self._overview_header_spacer = header_spacer
-        self.overview_rows_frame = ttk.Frame(
-            self.overview_canvas, style="Card.TFrame"
-        )
+        self.overview_rows_frame = ttk.Frame(self.overview_canvas, style="Card.TFrame")
         self.overview_rows_frame.columnconfigure(0, weight=1)
         self._overview_rows_window = self.overview_canvas.create_window(
             (0, 0), window=self.overview_rows_frame, anchor="nw"
@@ -776,7 +806,7 @@ class BankParseGUI(TkinterDnD.Tk):
             "<Configure>", self._update_overview_scroll_region
         )
         self.overview_canvas.bind("<Configure>", self._resize_overview_rows)
-        parent.rowconfigure(3, weight=1)
+        parent.rowconfigure(4, weight=1)
 
     def _create_history_page(self, parent):
         parent.columnconfigure(0, weight=1)
@@ -797,17 +827,13 @@ class BankParseGUI(TkinterDnD.Tk):
         )
         self.history_page_canvas.grid(row=0, column=0, sticky="nsew")
         self.history_page_scrollbar.grid(row=0, column=1, sticky="ns")
-        parent = ttk.Frame(
-            self.history_page_canvas, style="App.TFrame", padding=20
-        )
+        parent = ttk.Frame(self.history_page_canvas, style="App.TFrame", padding=20)
         self.history_page_content = parent
         self.history_page_window = self.history_page_canvas.create_window(
             (0, 0), window=parent, anchor="nw"
         )
         parent.bind("<Configure>", self._update_history_page_scroll_region)
-        self.history_page_canvas.bind(
-            "<Configure>", self._resize_history_page_content
-        )
+        self.history_page_canvas.bind("<Configure>", self._resize_history_page_content)
         for event_name in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
             self.history_page_canvas.bind_all(
                 event_name, self._scroll_history_page, add="+"
@@ -859,12 +885,12 @@ class BankParseGUI(TkinterDnD.Tk):
         files_frame.pack(fill=tk.BOTH, expand=True)
         files_frame.columnconfigure(0, weight=1)
         files_frame.rowconfigure(1, weight=1)
-        ttk.Label(
-            files_frame, text="Source Workbooks", style="CardTitle.TLabel"
-        ).grid(row=0, column=0, sticky="w", pady=(0, 8))
-        ttk.Label(
-            files_frame, text="Scroll to view all", style="Muted.TLabel"
-        ).grid(row=0, column=1, sticky="e", pady=(0, 8))
+        ttk.Label(files_frame, text="Source Workbooks", style="CardTitle.TLabel").grid(
+            row=0, column=0, sticky="w", pady=(0, 8)
+        )
+        ttk.Label(files_frame, text="Scroll to view all", style="Muted.TLabel").grid(
+            row=0, column=1, sticky="e", pady=(0, 8)
+        )
         self.history_file_tree = self._create_treeview(
             files_frame,
             columns=("workbook", "period", "transactions"),
@@ -899,9 +925,7 @@ class BankParseGUI(TkinterDnD.Tk):
         result_tabs = ttk.Frame(parent, style="App.TFrame")
         result_tabs.grid(row=4, column=0, sticky="ew", pady=(0, 8))
         for column in range(4):
-            result_tabs.columnconfigure(
-                column, weight=1, uniform="history-tabs"
-            )
+            result_tabs.columnconfigure(column, weight=1, uniform="history-tabs")
 
         results_surface = RoundedCard(
             parent,
@@ -912,21 +936,13 @@ class BankParseGUI(TkinterDnD.Tk):
         )
         self.history_results_surface = results_surface
         results_surface.grid(row=5, column=0, sticky="nsew")
-        self.history_results = ttk.Frame(
-            results_surface.content, style="Card.TFrame"
-        )
+        self.history_results = ttk.Frame(results_surface.content, style="Card.TFrame")
         self.history_results.pack(fill=tk.BOTH, expand=True)
         self.history_results.columnconfigure(0, weight=1)
         self.history_results.rowconfigure(0, weight=1)
-        overview_page = ttk.Frame(
-            self.history_results, style="Card.TFrame", padding=10
-        )
-        category_page = ttk.Frame(
-            self.history_results, style="Card.TFrame", padding=10
-        )
-        chart_page = ttk.Frame(
-            self.history_results, style="Card.TFrame", padding=10
-        )
+        overview_page = ttk.Frame(self.history_results, style="Card.TFrame", padding=10)
+        category_page = ttk.Frame(self.history_results, style="Card.TFrame", padding=10)
+        chart_page = ttk.Frame(self.history_results, style="Card.TFrame", padding=10)
         subscription_page = ttk.Frame(
             self.history_results, style="Card.TFrame", padding=10
         )
@@ -943,9 +959,7 @@ class BankParseGUI(TkinterDnD.Tk):
         self.history_overview_cards_frame = ttk.Frame(
             overview_page, style="Card.TFrame"
         )
-        self.history_overview_cards_frame.grid(
-            row=0, column=0, sticky="new"
-        )
+        self.history_overview_cards_frame.grid(row=0, column=0, sticky="new")
         for column in range(4):
             self.history_overview_cards_frame.columnconfigure(
                 column, weight=1, uniform="history-overview-cards"
@@ -1016,15 +1030,9 @@ class BankParseGUI(TkinterDnD.Tk):
             ),
         )
         self.history_category_tree.configure(style="CategoryTrend.Treeview")
-        self.history_category_tree.tag_configure(
-            "increasing", foreground=STATUS_OVER
-        )
-        self.history_category_tree.tag_configure(
-            "decreasing", foreground=STATUS_UNDER
-        )
-        self.history_category_tree.tag_configure(
-            "stable", foreground=TEXT_SECONDARY
-        )
+        self.history_category_tree.tag_configure("increasing", foreground=STATUS_OVER)
+        self.history_category_tree.tag_configure("decreasing", foreground=STATUS_UNDER)
+        self.history_category_tree.tag_configure("stable", foreground=TEXT_SECONDARY)
         self.history_category_colors = {}
         self.history_subscription_tree = self._create_history_tree(
             subscription_page,
@@ -1051,24 +1059,248 @@ class BankParseGUI(TkinterDnD.Tk):
             scrollregion=self.history_page_canvas.bbox("all")
         )
 
-    def _scroll_history_page(self, event):
-        widget = event.widget
-        while widget is not None and widget is not self.history_page_canvas:
-            widget = getattr(widget, "master", None)
-        if (
-            widget is None
-            or self._selected_workspace_page is not self.history_page
-        ):
+    def _select_monthly_results_page(self, page):
+        if page is self._selected_monthly_results_page:
             return
+        self._selected_monthly_results_page = page
+        page.tkraise()
+        if page is self.monthly_chart_results_page:
+            self.after_idle(self._draw_monthly_category_chart)
+        for button, tab_page in self.monthly_result_tab_buttons:
+            button.set_selected(tab_page is page)
+
+    def _draw_monthly_category_chart(self):
+        canvas = self.monthly_category_chart
+        canvas.delete("all")
+        rows = getattr(self, "monthly_overview_rows", ())
+        month = self.overview_month_var.get()
+        width = canvas.winfo_width()
+        height = canvas.winfo_height()
+        if width <= 1 or height <= 1:
+            return
+        if not month or not self.monthly_analysis_statements:
+            canvas.create_text(
+                width // 2,
+                height // 2,
+                text="Load CSV files and choose a month to see category spending.",
+                fill=TEXT_SECONDARY,
+                font=("Arial", 13),
+            )
+            return
+
+        categories = tuple(rows)
+        category_count = len(categories)
+        self.monthly_category_colors = {}
+        for index, (category, _spent, _target, _remaining) in enumerate(categories):
+            self.monthly_category_visibility.setdefault(category, True)
+            hue = (index / max(1, category_count) + 0.04) % 1
+            red, green, blue = colorsys.hsv_to_rgb(hue, 0.68, 0.95)
+            self.monthly_category_colors[category] = (
+                f"#{round(red * 255):02x}{round(green * 255):02x}"
+                f"{round(blue * 255):02x}"
+            )
+
+        legend_width = min(520, max(320, int(width * 0.34)))
+        legend_left = width - legend_width
+        left = 68
+        right = legend_left - 22
+        top = 52
+        bottom = height - 76
+        plot_width = max(1, right - left)
+        plot_height = max(1, bottom - top)
+        canvas.create_text(
+            left,
+            12,
+            text=f"Category spending for {month}",
+            anchor="nw",
+            fill=TEXT_SECONDARY,
+            font=("Arial", 13, "bold"),
+        )
+        canvas.create_text(
+            legend_left + 8,
+            10,
+            text="Categories — click to toggle",
+            anchor="nw",
+            fill=TEXT_SECONDARY,
+            font=("Arial", 16, "bold"),
+        )
+
+        visible_categories = tuple(
+            row
+            for row in categories
+            if self.monthly_category_visibility.get(row[0], True)
+        )
+        selected_total, maximum = self._monthly_chart_totals(visible_categories)
+        for tick in range(5):
+            value = maximum * tick / 4
+            y = bottom - plot_height * tick / 4
+            canvas.create_line(left, y, right, y, fill=BORDER, dash=(2, 4))
+            canvas.create_text(
+                left - 8,
+                y,
+                text=(f"${value:,.2f}" if maximum < 4 else f"${value:,.0f}"),
+                anchor="e",
+                fill=TEXT_SECONDARY,
+                font=("Arial", 10),
+                tags=("monthly-chart-y-tick",),
+            )
+
+        bar_count = len(categories) + 1
+        slot_width = plot_width / max(1, bar_count)
+        bar_width = min(48, max(8, slot_width * 0.58))
+
+        def y_for(value):
+            return bottom - plot_height * max(0.0, value) / maximum
+
+        for index, (category, spent, _target, _remaining) in enumerate(categories):
+            if not self.monthly_category_visibility.get(category, True):
+                continue
+            center = left + slot_width * (index + 0.5)
+            y = y_for(spent)
+            canvas.create_rectangle(
+                center - bar_width / 2,
+                y,
+                center + bar_width / 2,
+                bottom,
+                fill=self.monthly_category_colors[category],
+                outline="",
+                tags=("monthly-category-bar", f"monthly-category-{index}"),
+            )
+            label = category if len(category) <= 12 else f"{category[:9]}..."
+            canvas.create_text(
+                center,
+                bottom + 12,
+                text=label,
+                anchor="n",
+                fill=TEXT_PRIMARY,
+                font=("Arial", 9),
+                width=max(1, slot_width),
+            )
+
+        if visible_categories:
+            center = left + slot_width * (bar_count - 0.5)
+            y = y_for(selected_total)
+            canvas.create_rectangle(
+                center - bar_width / 2,
+                y,
+                center + bar_width / 2,
+                bottom,
+                fill=METRIC_SPENT,
+                outline="",
+                tags=("monthly-selected-total-bar",),
+            )
+            canvas.create_text(
+                center,
+                bottom + 12,
+                text="Selected Total",
+                anchor="n",
+                fill=METRIC_SPENT,
+                font=("Arial", 9, "bold"),
+                width=max(1, slot_width),
+            )
+
+        self._draw_monthly_category_legend(canvas, categories, legend_left, width)
+
+    @staticmethod
+    def _monthly_chart_totals(visible_categories):
+        selected_total = sum(row[1] for row in visible_categories)
+        maximum = max(
+            selected_total,
+            max((row[1] for row in visible_categories), default=0.0),
+        )
+        return selected_total, maximum or 1.0
+
+    def _draw_monthly_category_legend(self, canvas, categories, legend_left, width):
+        total_y = 48
+        canvas.create_rectangle(
+            legend_left + 10,
+            total_y - 10,
+            legend_left + 28,
+            total_y + 10,
+            fill=METRIC_SPENT,
+            outline=METRIC_SPENT,
+            tags=("monthly-total-legend",),
+        )
+        canvas.create_text(
+            legend_left + 38,
+            total_y,
+            text="Selected Total",
+            anchor="w",
+            fill=METRIC_SPENT,
+            font=("Arial", 15, "bold"),
+            tags=("monthly-total-legend",),
+        )
+        for index, (category, _spent, _target, _remaining) in enumerate(categories):
+            enabled = self.monthly_category_visibility.get(category, True)
+            color = self.monthly_category_colors[category]
+            row_y = total_y + (index + 1) * 38
+            tag = f"monthly-category-legend-{index}"
+            canvas.create_rectangle(
+                legend_left + 10,
+                row_y - 10,
+                legend_left + 28,
+                row_y + 10,
+                fill=color if enabled else SURFACE,
+                outline=color,
+                width=2,
+                tags=("monthly-category-legend", tag),
+            )
+            canvas.create_text(
+                legend_left + 38,
+                row_y,
+                text=category,
+                anchor="w",
+                fill=TEXT_PRIMARY if enabled else TEXT_SECONDARY,
+                font=("Arial", 15, "bold" if enabled else "normal"),
+                width=max(80, width - legend_left - 60),
+                tags=("monthly-category-legend", tag),
+            )
+            canvas.tag_bind(
+                tag,
+                "<Button-1>",
+                lambda _event, name=category: self._toggle_monthly_category(name),
+            )
+            canvas.tag_bind(
+                tag,
+                "<Enter>",
+                lambda _event: canvas.configure(cursor="hand2"),
+            )
+            canvas.tag_bind(
+                tag,
+                "<Leave>",
+                lambda _event: canvas.configure(cursor=""),
+            )
+
+    def _toggle_monthly_category(self, category):
+        self.monthly_category_visibility[category] = not (
+            self.monthly_category_visibility.get(category, True)
+        )
+        self._draw_monthly_category_chart()
+
+    @staticmethod
+    def _mouse_wheel_units(event):
         delta = getattr(event, "delta", 0)
         if delta:
             units = -int(delta / 120) if abs(delta) >= 120 else -int(delta)
             if units == 0:
                 units = -1 if delta > 0 else 1
-        else:
-            units = -1 if getattr(event, "num", None) == 4 else 1
-        self.history_page_canvas.yview_scroll(units, "units")
+            return units
+        return -1 if getattr(event, "num", None) == 4 else 1
+
+    @staticmethod
+    def _scroll_canvas_from_event(event, canvas):
+        widget = event.widget
+        while widget is not None and widget is not canvas:
+            widget = getattr(widget, "master", None)
+        if widget is None:
+            return
+        canvas.yview_scroll(BankParseGUI._mouse_wheel_units(event), "units")
         return "break"
+
+    def _scroll_history_page(self, event):
+        if self._selected_workspace_page is not self.history_page:
+            return
+        return self._scroll_canvas_from_event(event, self.history_page_canvas)
 
     def _update_history_results_size(self):
         analysis = self.history_analysis
@@ -1218,26 +1450,22 @@ class BankParseGUI(TkinterDnD.Tk):
         tree._column_resize_drag = None
         tree.bind(
             "<Configure>",
-            lambda _event, widget=tree: self._position_treeview_resize_handles(
-                widget
-            ),
+            lambda _event, widget=tree: self._position_treeview_resize_handles(widget),
             add="+",
         )
         tree.bind(
             "<B1-Motion>",
-            lambda _event, widget=tree: self._schedule_treeview_handle_position(
-                widget
-            ),
+            lambda _event, widget=tree: self._schedule_treeview_handle_position(widget),
             add="+",
         )
         tree.bind(
             "<ButtonRelease-1>",
-            lambda _event, widget=tree: self._schedule_treeview_handle_position(
-                widget
-            ),
+            lambda _event, widget=tree: self._schedule_treeview_handle_position(widget),
             add="+",
         )
-        tree.after_idle(lambda widget=tree: self._position_treeview_resize_handles(widget))
+        tree.after_idle(
+            lambda widget=tree: self._position_treeview_resize_handles(widget)
+        )
         return tree
 
     def _fit_initial_transaction_columns(self, _event=None):
@@ -1250,9 +1478,7 @@ class BankParseGUI(TkinterDnD.Tk):
 
         self._transaction_columns_fitted = True
         columns = tree.tk.splitlist(tree.cget("columns"))
-        widths = {
-            column: int(tree.column(column, "width")) for column in columns
-        }
+        widths = {column: int(tree.column(column, "width")) for column in columns}
         deficit = max(0, sum(widths.values()) - available_width)
         for column in ("merchant", "category", "amount", "date", "bank"):
             reduction = min(
@@ -1296,7 +1522,9 @@ class BankParseGUI(TkinterDnD.Tk):
                 handle.place_forget()
 
     def _schedule_treeview_handle_position(self, tree):
-        tree.after_idle(lambda widget=tree: self._position_treeview_resize_handles(widget))
+        tree.after_idle(
+            lambda widget=tree: self._position_treeview_resize_handles(widget)
+        )
 
     def _start_treeview_column_resize(self, tree, boundary, event):
         tree._column_resize_drag = boundary
@@ -1428,9 +1656,7 @@ class BankParseGUI(TkinterDnD.Tk):
         )
         file_tree.heading("path", text="Selected Excel Workbooks")
         file_tree.column("path", width=820, minwidth=300)
-        file_scroll = ttk.Scrollbar(
-            frame, orient=tk.VERTICAL, command=file_tree.yview
-        )
+        file_scroll = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=file_tree.yview)
         file_tree.configure(yscrollcommand=file_scroll.set)
         file_tree.grid(row=2, column=0, sticky="nsew")
         file_scroll.grid(row=2, column=1, sticky="ns")
@@ -1461,9 +1687,7 @@ class BankParseGUI(TkinterDnD.Tk):
                 parent=dialog,
             ):
                 return
-            remove_indexes = {
-                int(item.removeprefix("file-")) for item in selection
-            }
+            remove_indexes = {int(item.removeprefix("file-")) for item in selection}
             self._remove_history_files_at(remove_indexes)
             refresh_files()
 
@@ -1480,9 +1704,7 @@ class BankParseGUI(TkinterDnD.Tk):
             text="Remove Selected",
             command=remove_files,
         ).pack(side=tk.LEFT, padx=(10, 0))
-        RoundedButton(buttons, text="Done", command=dialog.destroy).pack(
-            side=tk.RIGHT
-        )
+        RoundedButton(buttons, text="Done", command=dialog.destroy).pack(side=tk.RIGHT)
         refresh_files()
         self._center_dialog(dialog)
 
@@ -1493,13 +1715,9 @@ class BankParseGUI(TkinterDnD.Tk):
         policy = self.parser.duplicate_policy
         self.history_effective_exclusions = set()
         if policy == "warn_review":
-            self.history_effective_exclusions.update(
-                self.history_duplicate_exclusions
-            )
+            self.history_effective_exclusions.update(self.history_duplicate_exclusions)
         elif policy == "auto_merge":
-            self.history_effective_exclusions.update(
-                self.history_duplicate_exclusions
-            )
+            self.history_effective_exclusions.update(self.history_duplicate_exclusions)
             self.history_effective_exclusions.update(
                 duplicate_occurrences_to_skip(self.history_duplicate_groups)
             )
@@ -1802,11 +2020,7 @@ class BankParseGUI(TkinterDnD.Tk):
             for index in range(len(months))
         )
         total_first_index = next(
-            (
-                index
-                for index, value in enumerate(total_monthly_spending)
-                if value > 0
-            ),
+            (index for index, value in enumerate(total_monthly_spending) if value > 0),
             None,
         )
         total_active_values = (
@@ -1826,10 +2040,13 @@ class BankParseGUI(TkinterDnD.Tk):
                 (index - total_midpoint) ** 2
                 for index in range(len(total_active_values))
             )
-            total_change = sum(
-                (index - total_midpoint) * (value - total_average)
-                for index, value in enumerate(total_active_values)
-            ) / denominator
+            total_change = (
+                sum(
+                    (index - total_midpoint) * (value - total_average)
+                    for index, value in enumerate(total_active_values)
+                )
+                / denominator
+            )
         trend_values = []
         if total_change is not None and total_first_index is not None:
             trend_values.extend(
@@ -2099,8 +2316,7 @@ class BankParseGUI(TkinterDnD.Tk):
                     x_for(index),
                     y_for(
                         total_average
-                        + total_change
-                        * (index - total_first_index - total_midpoint)
+                        + total_change * (index - total_first_index - total_midpoint)
                     ),
                 )
             ]
@@ -2233,9 +2449,7 @@ class BankParseGUI(TkinterDnD.Tk):
         ):
             tree.heading(column, text=heading)
             tree.column(column, width=width, minwidth=80, anchor=anchor)
-        scrollbar = ttk.Scrollbar(
-            tree_frame, orient=tk.VERTICAL, command=tree.yview
-        )
+        scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=tree.yview)
         tree.configure(yscrollcommand=scrollbar.set)
         tree.grid(row=0, column=0, sticky="nsew")
         scrollbar.grid(row=0, column=1, sticky="ns")
@@ -2343,13 +2557,9 @@ class BankParseGUI(TkinterDnD.Tk):
         policy = self.parser.duplicate_policy
         self.monthly_effective_exclusions = set()
         if policy == "warn_review":
-            self.monthly_effective_exclusions.update(
-                self.monthly_duplicate_exclusions
-            )
+            self.monthly_effective_exclusions.update(self.monthly_duplicate_exclusions)
         elif policy == "auto_merge":
-            self.monthly_effective_exclusions.update(
-                self.monthly_duplicate_exclusions
-            )
+            self.monthly_effective_exclusions.update(self.monthly_duplicate_exclusions)
             self.monthly_effective_exclusions.update(
                 duplicate_occurrences_to_skip(self.monthly_duplicate_groups)
             )
@@ -2458,6 +2668,8 @@ class BankParseGUI(TkinterDnD.Tk):
         )
         remaining = total_budget - total_spent
         net_income = total_income - total_spent
+        unbudgeted_income = total_income - total_budget
+        self.monthly_overview_rows = rows
         self.overview_spent_var.set(self._format_amount(total_spent))
         self.overview_budget_var.set(self._format_amount(total_budget))
         self.overview_remaining_var.set(
@@ -2467,11 +2679,16 @@ class BankParseGUI(TkinterDnD.Tk):
         )
         self.overview_income_var.set(self._format_amount(total_income))
         self.overview_net_income_var.set(self._format_amount(net_income))
+        self.overview_unbudgeted_var.set(self._format_amount(unbudgeted_income))
         self._set_monthly_metric_accent(
             "remaining", STATUS_UNDER if remaining >= 0 else STATUS_OVER
         )
         self._set_monthly_metric_accent(
             "net", STATUS_UNDER if net_income >= 0 else STATUS_OVER
+        )
+        self._set_monthly_metric_accent(
+            "unbudgeted",
+            ACCENT if unbudgeted_income >= 0 else STATUS_OVER,
         )
         for widget in self.overview_rows_frame.winfo_children():
             widget.destroy()
@@ -2536,11 +2753,11 @@ class BankParseGUI(TkinterDnD.Tk):
         self.overview_rows_frame.update_idletasks()
         self._update_overview_scroll_region()
         self.overview_canvas.yview_moveto(0)
+        if hasattr(self, "monthly_category_chart"):
+            self._draw_monthly_category_chart()
 
     def _update_overview_scroll_region(self, _event=None):
-        self.overview_canvas.configure(
-            scrollregion=self.overview_canvas.bbox("all")
-        )
+        self.overview_canvas.configure(scrollregion=self.overview_canvas.bbox("all"))
 
     def _resize_overview_rows(self, event):
         self.overview_canvas.itemconfigure(
@@ -2557,9 +2774,7 @@ class BankParseGUI(TkinterDnD.Tk):
     def _position_overview_resize_handles(self, _event=None):
         header_width = self._overview_header_frame.winfo_width()
         header_height = self._overview_header_frame.winfo_height()
-        column_width = max(
-            1, header_width - self._overview_header_spacer.winfo_width()
-        )
+        column_width = max(1, header_width - self._overview_header_spacer.winfo_width())
         total_weight = sum(self._overview_column_weights)
         cumulative_weight = 0
         for index, handle in enumerate(self._overview_column_resize_handles):
@@ -2589,9 +2804,12 @@ class BankParseGUI(TkinterDnD.Tk):
     def _drag_overview_column_resize(self, boundary, event):
         if self._overview_resize_drag is None:
             return
-        drag_boundary, start_x, original_weights, table_width = (
-            self._overview_resize_drag
-        )
+        (
+            drag_boundary,
+            start_x,
+            original_weights,
+            table_width,
+        ) = self._overview_resize_drag
         if boundary != drag_boundary:
             return
 
@@ -2655,20 +2873,7 @@ class BankParseGUI(TkinterDnD.Tk):
         self._position_overview_resize_handles()
 
     def _scroll_overview_rows(self, event):
-        widget = event.widget
-        while widget is not None and widget is not self.overview_canvas:
-            widget = getattr(widget, "master", None)
-        if widget is None:
-            return
-        delta = getattr(event, "delta", 0)
-        if delta:
-            units = -int(delta / 120) if abs(delta) >= 120 else -int(delta)
-            if units == 0:
-                units = -1 if delta > 0 else 1
-        else:
-            units = -1 if getattr(event, "num", None) == 4 else 1
-        self.overview_canvas.yview_scroll(units, "units")
-        return "break"
+        return self._scroll_canvas_from_event(event, self.overview_canvas)
 
     @staticmethod
     def _monthly_overview_data(statements, targets, month):
@@ -2750,9 +2955,7 @@ class BankParseGUI(TkinterDnD.Tk):
         )
         file_tree.heading("path", text="Selected CSV Files")
         file_tree.column("path", width=820, minwidth=300)
-        file_scroll = ttk.Scrollbar(
-            frame, orient=tk.VERTICAL, command=file_tree.yview
-        )
+        file_scroll = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=file_tree.yview)
         file_tree.configure(yscrollcommand=file_scroll.set)
         file_tree.grid(row=2, column=0, sticky="nsew")
         file_scroll.grid(row=2, column=1, sticky="ns")
@@ -2776,9 +2979,7 @@ class BankParseGUI(TkinterDnD.Tk):
                     parent=dialog,
                 )
                 return
-            paths_to_remove = {
-                file_tree.item(item, "values")[0] for item in selection
-            }
+            paths_to_remove = {file_tree.item(item, "values")[0] for item in selection}
             if not messagebox.askyesno(
                 "Remove Selected Files?",
                 "Remove the selected files and their transactions from this import? "
@@ -2805,9 +3006,7 @@ class BankParseGUI(TkinterDnD.Tk):
             text="Remove Selected",
             command=remove_files,
         ).pack(side=tk.LEFT, padx=(10, 0))
-        RoundedButton(
-            buttons, text="Done", command=dialog.destroy
-        ).pack(side=tk.RIGHT)
+        RoundedButton(buttons, text="Done", command=dialog.destroy).pack(side=tk.RIGHT)
         refresh_files()
         self._center_dialog(dialog)
 
@@ -2823,9 +3022,7 @@ class BankParseGUI(TkinterDnD.Tk):
         selected_page = self._selected_workspace_page
         if selected_page == self.history_page:
             workbook_paths = [
-                path
-                for path in paths
-                if path.lower().endswith((".xlsx", ".xlsm"))
+                path for path in paths if path.lower().endswith((".xlsx", ".xlsm"))
             ]
             ignored_paths = [path for path in paths if path not in workbook_paths]
             if not workbook_paths:
@@ -2917,7 +3114,8 @@ class BankParseGUI(TkinterDnD.Tk):
         if not statements:
             messagebox.showerror(
                 "Could Not Import Statements",
-                "\n\n".join(errors) or "No transactions could be read from those files.",
+                "\n\n".join(errors)
+                or "No transactions could be read from those files.",
                 parent=self,
             )
             return
@@ -2988,9 +3186,7 @@ class BankParseGUI(TkinterDnD.Tk):
                 ),
             )
             self.review_tree.set(f"merchant-{index}", "merchant", label)
-            self.review_tree.item(
-                f"merchant-{index}", tags=(key,)
-            )
+            self.review_tree.item(f"merchant-{index}", tags=(key,))
 
         self._refresh_transaction_table()
 
@@ -3128,12 +3324,16 @@ class BankParseGUI(TkinterDnD.Tk):
         category = category_from_name(selected_category) if selected_category else None
         if not keys:
             messagebox.showinfo(
-                "Select Merchants", "Select one or more merchants to categorize.", parent=self
+                "Select Merchants",
+                "Select one or more merchants to categorize.",
+                parent=self,
             )
             return
         if category is None or category_name(category) == Category.NONE.value:
             messagebox.showinfo(
-                "Choose a Category", "Choose a category before applying it.", parent=self
+                "Choose a Category",
+                "Choose a category before applying it.",
+                parent=self,
             )
             return
 
@@ -3172,7 +3372,9 @@ class BankParseGUI(TkinterDnD.Tk):
             )
             return
         except ValueError as error:
-            messagebox.showerror("Could Not Categorize Merchants", str(error), parent=self            )
+            messagebox.showerror(
+                "Could Not Categorize Merchants", str(error), parent=self
+            )
             return
 
         self.parser.apply_category_rules(self.statements)
@@ -3185,7 +3387,9 @@ class BankParseGUI(TkinterDnD.Tk):
     def export_data(self):
         if not self.statements:
             messagebox.showinfo(
-                "No Statements Loaded", "Choose statement CSV files before exporting.", parent=self
+                "No Statements Loaded",
+                "Choose statement CSV files before exporting.",
+                parent=self,
             )
             return
         if (
@@ -3235,7 +3439,9 @@ class BankParseGUI(TkinterDnD.Tk):
             )
         except (OSError, ValueError) as error:
             messagebox.showerror(
-                "Export Failed", f"Could not create the Excel file:\n{error}", parent=self
+                "Export Failed",
+                f"Could not create the Excel file:\n{error}",
+                parent=self,
             )
             return
         self.status_var.set(f"Excel file created: {output_path}")
@@ -3405,9 +3611,7 @@ class BankParseGUI(TkinterDnD.Tk):
             fields.columnconfigure(1, weight=1)
 
             pattern_var = tk.StringVar(value=rule.pattern if rule else "")
-            match_type_var = tk.StringVar(
-                value=rule.match_type if rule else "contains"
-            )
+            match_type_var = tk.StringVar(value=rule.match_type if rule else "contains")
             title_var = tk.StringVar(value=rule.title if rule else "")
             category_var = tk.StringVar(
                 value=category_name(rule.category) if rule else ""
@@ -3527,9 +3731,7 @@ class BankParseGUI(TkinterDnD.Tk):
             try:
                 self.parser.delete_category_rule(pattern)
             except sqlite3.Error as error:
-                messagebox.showerror(
-                    "Could Not Delete Rule", str(error), parent=dialog
-                )
+                messagebox.showerror("Could Not Delete Rule", str(error), parent=dialog)
                 return
             refresh_rules()
             self.status_var.set("Category rule deleted.")
@@ -3543,9 +3745,9 @@ class BankParseGUI(TkinterDnD.Tk):
             style="Primary.TButton",
             command=open_rule_editor,
         ).pack(side=tk.LEFT)
-        RoundedButton(
-            buttons, text="Edit Selected", command=edit_selected_rule
-        ).pack(side=tk.LEFT, padx=(10, 0))
+        RoundedButton(buttons, text="Edit Selected", command=edit_selected_rule).pack(
+            side=tk.LEFT, padx=(10, 0)
+        )
         RoundedButton(
             buttons, text="Delete Selected", command=delete_selected_rule
         ).pack(side=tk.LEFT, padx=(10, 0))
@@ -3669,9 +3871,7 @@ class BankParseGUI(TkinterDnD.Tk):
         try:
             os.makedirs(output_directory, exist_ok=True)
         except OSError as error:
-            messagebox.showerror(
-                "Could Not Export Settings", str(error), parent=parent
-            )
+            messagebox.showerror("Could Not Export Settings", str(error), parent=parent)
             return
         if os.path.exists(output_path) and not messagebox.askyesno(
             "Replace Exported Settings?",
@@ -3682,9 +3882,7 @@ class BankParseGUI(TkinterDnD.Tk):
         try:
             self.parser.export_settings(output_path)
         except (OSError, sqlite3.Error, ValueError) as error:
-            messagebox.showerror(
-                "Could Not Export Settings", str(error), parent=parent
-            )
+            messagebox.showerror("Could Not Export Settings", str(error), parent=parent)
             return
         self.status_var.set(f"Settings exported: {output_path}")
         messagebox.showinfo(
@@ -3698,9 +3896,7 @@ class BankParseGUI(TkinterDnD.Tk):
         try:
             os.makedirs(output_directory, exist_ok=True)
         except OSError as error:
-            messagebox.showerror(
-                "Could Not Import Settings", str(error), parent=parent
-            )
+            messagebox.showerror("Could Not Import Settings", str(error), parent=parent)
             return
         source_path = filedialog.askopenfilename(
             title="Import Statement Parser Settings",
@@ -3715,8 +3911,7 @@ class BankParseGUI(TkinterDnD.Tk):
             return
 
         backup_name = (
-            "statement_parser_old_"
-            f"{datetime.now().strftime('%Y%m%d_%H%M%S_%f')}.db"
+            "statement_parser_old_" f"{datetime.now().strftime('%Y%m%d_%H%M%S_%f')}.db"
         )
         backup_path = os.path.join(output_directory, backup_name)
         if not messagebox.askyesno(
@@ -3859,9 +4054,7 @@ class BankParseGUI(TkinterDnD.Tk):
             fields.pack(fill=tk.BOTH, expand=True)
             fields.columnconfigure(1, weight=1)
             name_var = tk.StringVar(value=category.name if category else "")
-            amount_var = tk.StringVar(
-                value=str(category.amount) if category else "0.0"
-            )
+            amount_var = tk.StringVar(value=str(category.amount) if category else "0.0")
 
             ttk.Label(fields, text="Category Name", style="CardTitle.TLabel").grid(
                 row=0, column=0, sticky="w", padx=(0, 16), pady=8
@@ -3907,9 +4100,9 @@ class BankParseGUI(TkinterDnD.Tk):
 
             buttons = ttk.Frame(fields, style="Card.TFrame")
             buttons.grid(row=3, column=0, columnspan=2, sticky="e", pady=(10, 0))
-            RoundedButton(
-                buttons, text="Cancel", command=editor.destroy
-            ).pack(side=tk.RIGHT, padx=(8, 0))
+            RoundedButton(buttons, text="Cancel", command=editor.destroy).pack(
+                side=tk.RIGHT, padx=(8, 0)
+            )
             RoundedButton(
                 buttons,
                 text="Save Category",

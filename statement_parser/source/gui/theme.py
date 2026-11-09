@@ -460,9 +460,7 @@ class RoundedButton(tk.Canvas):
             if self.__textvariable is not None and self.__trace_id is not None:
                 self.__textvariable.trace_remove("write", self.__trace_id)
             self.__textvariable = textvariable
-            self.__trace_id = textvariable.trace_add(
-                "write", self.__on_text_change
-            )
+            self.__trace_id = textvariable.trace_add("write", self.__on_text_change)
             self.__text = textvariable.get()
         if "command" in kwargs:
             self.__command = kwargs.pop("command")
@@ -470,9 +468,7 @@ class RoundedButton(tk.Canvas):
             self.__state = kwargs.pop("state")
             tk.Canvas.configure(
                 self,
-                cursor="arrow"
-                if self.__state == tk.DISABLED
-                else "hand2",
+                cursor="arrow" if self.__state == tk.DISABLED else "hand2",
             )
         if "style" in kwargs:
             style = kwargs.pop("style")
@@ -561,7 +557,14 @@ class RoundedButton(tk.Canvas):
 
         if self.focus_get() is self:
             _rounded_fill(
-                self, 0, 0, width - 1, height - 1, self.__radius, ACCENT, "rounded-button"
+                self,
+                0,
+                0,
+                width - 1,
+                height - 1,
+                self.__radius,
+                ACCENT,
+                "rounded-button",
             )
             _rounded_fill(
                 self,

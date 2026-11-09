@@ -71,16 +71,13 @@ class HistoryAnalysis:
 
     @property
     def monthly_spending_change(self) -> Optional[float]:
-        return _monthly_slope(
-            self.monthly_spending[self.first_spending_month_index :]
-        )
+        return _monthly_slope(self.monthly_spending[self.first_spending_month_index :])
 
 
 def normalize_place(value: str) -> str:
     decomposed = unicodedata.normalize("NFKD", value).casefold()
     without_marks = "".join(
-        character for character in decomposed
-        if not unicodedata.combining(character)
+        character for character in decomposed if not unicodedata.combining(character)
     )
     return " ".join(re.sub(r"[^\w]+", " ", without_marks).split())
 
@@ -106,9 +103,7 @@ def find_duplicate_groups(
     grouped = defaultdict(list)
     for statement_index, statement in enumerate(statements):
         source_path = (
-            source_files[statement_index]
-            if statement_index < len(source_files)
-            else ""
+            source_files[statement_index] if statement_index < len(source_files) else ""
         )
         source_key = _source_key(source_path, statement_index)
         for transaction_index, transaction in enumerate(statement.transactions):
@@ -249,9 +244,7 @@ def load_combined_statement(path: str) -> Statement:
                     )
                 )
         if not transactions:
-            raise ValueError(
-                f"{os.path.basename(path)} contains no transaction rows."
-            )
+            raise ValueError(f"{os.path.basename(path)} contains no transaction rows.")
         return Statement(Bank.NONE, transactions)
     finally:
         workbook.close()
@@ -263,10 +256,13 @@ def _monthly_slope(values: Sequence[float]) -> Optional[float]:
     average_x = (len(values) - 1) / 2
     average_y = sum(values) / len(values)
     denominator = sum((index - average_x) ** 2 for index in range(len(values)))
-    return sum(
-        (index - average_x) * (value - average_y)
-        for index, value in enumerate(values)
-    ) / denominator
+    return (
+        sum(
+            (index - average_x) * (value - average_y)
+            for index, value in enumerate(values)
+        )
+        / denominator
+    )
 
 
 def _first_spending_month_index(values: Sequence[float]) -> int:
@@ -344,15 +340,16 @@ def analyze_history(statements: Sequence[Statement]) -> HistoryAnalysis:
         key=lambda item: (-item.average_monthly_spend, item.category.casefold())
     )
 
-    monthly_income = tuple(
-        abs(monthly_incomes.get(month, 0.0)) for month in months
-    )
+    monthly_income = tuple(abs(monthly_incomes.get(month, 0.0)) for month in months)
     monthly_spending = tuple(
         sum(category_values[category][index] for category in category_values)
         for index in range(len(months))
     )
     subscriptions = []
-    for (normalized_place, amount), matching_transactions in subscription_groups.items():
+    for (
+        normalized_place,
+        amount,
+    ), matching_transactions in subscription_groups.items():
         months_seen = tuple(
             sorted(
                 {
@@ -366,7 +363,9 @@ def analyze_history(statements: Sequence[Statement]) -> HistoryAnalysis:
         first_transaction = min(matching_transactions, key=lambda item: item.date)
         subscriptions.append(
             SubscriptionCandidate(
-                first_transaction.title or first_transaction.description or normalized_place,
+                first_transaction.title
+                or first_transaction.description
+                or normalized_place,
                 amount,
                 months_seen,
                 len(matching_transactions),

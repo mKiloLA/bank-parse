@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Union
 
+
 class Bank(Enum):
     CAPITAL_ONE = "CapitalOne"
     CITI = "Citi"

@@ -33,7 +33,9 @@ class CategoryPopup(tk.Toplevel):
         self.desc_var = tk.StringVar(value=desc_default)
         self.title_var = tk.StringVar()
         self.cat_var = tk.StringVar()
-        info_text = f"Add a category for the purchase at {desc_default} for {amount} on {date}."
+        info_text = (
+            f"Add a category for the purchase at {desc_default} for {amount} on {date}."
+        )
         ttk.Label(
             self,
             text=info_text,
@@ -65,6 +67,6 @@ class CategoryPopup(tk.Toplevel):
         self.result = (
             self.desc_var.get().strip().lower(),
             self.title_var.get().strip(),
-            self.cat_var.get().strip()
+            self.cat_var.get().strip(),
         )
         self.destroy()

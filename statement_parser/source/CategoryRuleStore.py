@@ -37,7 +37,9 @@ class CategoryRuleStore:
         self.database_path = database_path or get_appdata_path("statement_parser.db")
         self._memory_connection: Optional[sqlite3.Connection] = None
         if self.database_path != ":memory:":
-            os.makedirs(os.path.dirname(os.path.abspath(self.database_path)), exist_ok=True)
+            os.makedirs(
+                os.path.dirname(os.path.abspath(self.database_path)), exist_ok=True
+            )
         else:
             self._memory_connection = sqlite3.connect(":memory:")
             self._memory_connection.row_factory = sqlite3.Row
@@ -499,12 +501,12 @@ class CategoryRuleStore:
 
     def export_database(self, destination_path: str) -> None:
         destination_path = os.path.abspath(destination_path)
-        if (
-            self.database_path != ":memory:"
-            and os.path.realpath(destination_path)
-            == os.path.realpath(self.database_path)
-        ):
-            raise ValueError("Choose a different file from the active settings database.")
+        if self.database_path != ":memory:" and os.path.realpath(
+            destination_path
+        ) == os.path.realpath(self.database_path):
+            raise ValueError(
+                "Choose a different file from the active settings database."
+            )
 
         os.makedirs(os.path.dirname(destination_path), exist_ok=True)
         destination = sqlite3.connect(destination_path)
@@ -518,17 +520,18 @@ class CategoryRuleStore:
         source_path = os.path.abspath(source_path)
         if not os.path.isfile(source_path):
             raise ValueError("The selected settings file does not exist.")
-        if (
-            self.database_path != ":memory:"
-            and os.path.realpath(source_path) == os.path.realpath(self.database_path)
-        ):
+        if self.database_path != ":memory:" and os.path.realpath(
+            source_path
+        ) == os.path.realpath(self.database_path):
             raise ValueError("Choose a settings file other than the active database.")
 
         source_uri = f"{Path(source_path).as_uri()}?mode=ro"
         try:
             source = sqlite3.connect(source_uri, uri=True)
         except sqlite3.DatabaseError as error:
-            raise ValueError("The selected file is not a valid settings database.") from error
+            raise ValueError(
+                "The selected file is not a valid settings database."
+            ) from error
 
         try:
             source.row_factory = sqlite3.Row
@@ -542,8 +545,7 @@ class CategoryRuleStore:
             }
             for table, required in required_columns.items():
                 columns = {
-                    row["name"]
-                    for row in source.execute(f"PRAGMA table_info({table})")
+                    row["name"] for row in source.execute(f"PRAGMA table_info({table})")
                 }
                 if not required <= columns:
                     raise ValueError(
@@ -612,7 +614,10 @@ class CategoryRuleStore:
                     if category != Category.NONE
                 }
 
-            for required_system_category in (Category.INCOME.value, Category.IGNORE.value):
+            for required_system_category in (
+                Category.INCOME.value,
+                Category.IGNORE.value,
+            ):
                 record = imported_categories.get(required_system_category.casefold())
                 if record is None or not record[2] or not record[3]:
                     raise ValueError(
@@ -655,9 +660,7 @@ class CategoryRuleStore:
                 imported_rules.append(rule)
 
             imported_targets = {}
-            for row in source.execute(
-                "SELECT category, amount FROM category_targets"
-            ):
+            for row in source.execute("SELECT category, amount FROM category_targets"):
                 category_record = imported_categories.get(
                     str(row["category"]).casefold()
                 )
@@ -682,7 +685,9 @@ class CategoryRuleStore:
                     )
                 imported_targets[category_record[0]] = amount
         except sqlite3.DatabaseError as error:
-            raise ValueError("The selected file is not a valid settings database.") from error
+            raise ValueError(
+                "The selected file is not a valid settings database."
+            ) from error
         finally:
             source.close()
 

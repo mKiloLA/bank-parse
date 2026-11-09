@@ -20,9 +20,7 @@ class CategoryRuleStoreTests(unittest.TestCase):
 
         reopened_store = CategoryRuleStore(database_path=self.database_path)
 
-        self.assertEqual(
-            reopened_store.list_rules()[0].category, Category.DINING
-        )
+        self.assertEqual(reopened_store.list_rules()[0].category, Category.DINING)
         self.assertEqual(
             reopened_store.get_category_targets()[Category.DINING.value], 450.0
         )
@@ -53,9 +51,7 @@ class CategoryRuleStoreTests(unittest.TestCase):
         store.save_category("Pet Care", 75.0)
         store.save_rule("pet store", "Pet Store", "Pet Care")
 
-        store.save_category(
-            "Animal Care", 90.0, original_name="Pet Care"
-        )
+        store.save_category("Animal Care", 90.0, original_name="Pet Care")
 
         self.assertIn("Animal Care", store.get_category_targets())
         self.assertNotIn("Pet Care", store.get_category_targets())
@@ -108,9 +104,7 @@ class CategoryRuleStoreTests(unittest.TestCase):
             [(rule.pattern, rule.category) for rule in importing_store.list_rules()],
             [("pet store", "Pet Care")],
         )
-        self.assertEqual(
-            importing_store.get_category_targets()["Pet Care"], 450.0
-        )
+        self.assertEqual(importing_store.get_category_targets()["Pet Care"], 450.0)
         self.assertEqual(
             importing_store.get_category_targets()[Category.OTHER.value], 0.0
         )
@@ -126,14 +120,10 @@ class CategoryRuleStoreTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "valid settings database"):
             store.import_settings(invalid_path)
 
-        self.assertEqual(
-            [rule.pattern for rule in store.list_rules()], ["existing"]
-        )
+        self.assertEqual([rule.pattern for rule in store.list_rules()], ["existing"])
 
     def test_imports_settings_exported_before_category_registry_existed(self):
-        old_export_path = os.path.join(
-            self.temporary_directory.name, "old-settings.db"
-        )
+        old_export_path = os.path.join(self.temporary_directory.name, "old-settings.db")
         with sqlite3.connect(old_export_path) as connection:
             connection.execute(
                 """
@@ -166,9 +156,7 @@ class CategoryRuleStoreTests(unittest.TestCase):
 
         self.assertIn(Category.DINING.value, store.list_categories())
         self.assertEqual(store.list_rules()[0].category, Category.DINING)
-        self.assertEqual(
-            store.get_category_targets()[Category.DINING.value], 300.0
-        )
+        self.assertEqual(store.get_category_targets()[Category.DINING.value], 300.0)
         self.assertEqual(store.get_duplicate_policy(), "warn_review")
 
 

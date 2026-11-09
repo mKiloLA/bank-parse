@@ -23,32 +23,25 @@ class HistoryAnalysisTests(unittest.TestCase):
             Bank.CITI,
             [
                 Transaction(
-                    date(2026, 9, 2), -100.0, "Dining", Bank.CITI,
-                    Category.DINING
+                    date(2026, 9, 2), -100.0, "Dining", Bank.CITI, Category.DINING
                 ),
                 Transaction(
-                    date(2026, 10, 2), -120.0, "Dining", Bank.CITI,
-                    Category.DINING
+                    date(2026, 10, 2), -120.0, "Dining", Bank.CITI, Category.DINING
                 ),
                 Transaction(
-                    date(2026, 11, 2), -140.0, "Dining", Bank.CITI,
-                    Category.DINING
+                    date(2026, 11, 2), -140.0, "Dining", Bank.CITI, Category.DINING
                 ),
                 Transaction(
-                    date(2026, 9, 4), -90.0, "Power", Bank.CITI,
-                    Category.UTILITIES
+                    date(2026, 9, 4), -90.0, "Power", Bank.CITI, Category.UTILITIES
                 ),
                 Transaction(
-                    date(2026, 11, 4), -120.0, "Power", Bank.CITI,
-                    Category.UTILITIES
+                    date(2026, 11, 4), -120.0, "Power", Bank.CITI, Category.UTILITIES
                 ),
                 Transaction(
-                    date(2026, 9, 1), 2000.0, "Pay", Bank.CITI,
-                    Category.INCOME
+                    date(2026, 9, 1), 2000.0, "Pay", Bank.CITI, Category.INCOME
                 ),
                 Transaction(
-                    date(2026, 10, 1), -50.0, "Transfer", Bank.CITI,
-                    Category.IGNORE
+                    date(2026, 10, 1), -50.0, "Transfer", Bank.CITI, Category.IGNORE
                 ),
             ],
         )
@@ -68,16 +61,13 @@ class HistoryAnalysisTests(unittest.TestCase):
             Bank.CITI,
             [
                 Transaction(
-                    date(2026, 9, 2), -90.0, "Power", Bank.CITI,
-                    Category.UTILITIES
+                    date(2026, 9, 2), -90.0, "Power", Bank.CITI, Category.UTILITIES
                 ),
                 Transaction(
-                    date(2026, 10, 2), -100.0, "Dining", Bank.CITI,
-                    Category.DINING
+                    date(2026, 10, 2), -100.0, "Dining", Bank.CITI, Category.DINING
                 ),
                 Transaction(
-                    date(2026, 11, 2), -120.0, "Power", Bank.CITI,
-                    Category.UTILITIES
+                    date(2026, 11, 2), -120.0, "Power", Bank.CITI, Category.UTILITIES
                 ),
             ],
         )
@@ -97,15 +87,18 @@ class HistoryAnalysisTests(unittest.TestCase):
             Bank.CITI,
             [
                 Transaction(
-                    date(2026, month, 5), -14.99, "Streaming Co", Bank.CITI,
-                    Category.ENTERTAINMENT, "STREAMING CO"
+                    date(2026, month, 5),
+                    -14.99,
+                    "Streaming Co",
+                    Bank.CITI,
+                    Category.ENTERTAINMENT,
+                    "STREAMING CO",
                 )
                 for month in (1, 2, 3)
             ]
             + [
                 Transaction(
-                    date(2026, month, 7), -8.0, "Gym", Bank.CITI,
-                    Category.OTHER, "Gym"
+                    date(2026, month, 7), -8.0, "Gym", Bank.CITI, Category.OTHER, "Gym"
                 )
                 for month in (1, 2)
             ],
@@ -123,8 +116,12 @@ class HistoryAnalysisTests(unittest.TestCase):
             Bank.CITI,
             [
                 Transaction(
-                    date(2026, 9, 5), -19.99, "NETFLIX", Bank.CITI,
-                    Category.ENTERTAINMENT, "Netflix"
+                    date(2026, 9, 5),
+                    -19.99,
+                    "NETFLIX",
+                    Bank.CITI,
+                    Category.ENTERTAINMENT,
+                    "Netflix",
                 )
             ],
         )
@@ -132,12 +129,20 @@ class HistoryAnalysisTests(unittest.TestCase):
             Bank.VENMO,
             [
                 Transaction(
-                    date(2026, 9, 5), -19.99, "Netflix ", Bank.VENMO,
-                    Category.ENTERTAINMENT, " netflix "
+                    date(2026, 9, 5),
+                    -19.99,
+                    "Netflix ",
+                    Bank.VENMO,
+                    Category.ENTERTAINMENT,
+                    " netflix ",
                 ),
                 Transaction(
-                    date(2026, 9, 6), -19.99, "Netflix", Bank.VENMO,
-                    Category.ENTERTAINMENT, "Netflix"
+                    date(2026, 9, 6),
+                    -19.99,
+                    "Netflix",
+                    Bank.VENMO,
+                    Category.ENTERTAINMENT,
+                    "Netflix",
                 ),
             ],
         )
@@ -155,28 +160,52 @@ class HistoryAnalysisTests(unittest.TestCase):
             Bank.CITI,
             [
                 Transaction(
-                    date(2026, 1, 5), -15.0, "Stream Service", Bank.CITI,
-                    Category.ENTERTAINMENT, "Stream Service"
+                    date(2026, 1, 5),
+                    -15.0,
+                    "Stream Service",
+                    Bank.CITI,
+                    Category.ENTERTAINMENT,
+                    "Stream Service",
                 ),
                 Transaction(
-                    date(2026, 1, 8), -100.0, "Dining", Bank.CITI,
-                    Category.DINING, "Dining"
+                    date(2026, 1, 8),
+                    -100.0,
+                    "Dining",
+                    Bank.CITI,
+                    Category.DINING,
+                    "Dining",
                 ),
                 Transaction(
-                    date(2026, 2, 5), -15.0, "Stream Service", Bank.CITI,
-                    Category.ENTERTAINMENT, "Stream Service"
+                    date(2026, 2, 5),
+                    -15.0,
+                    "Stream Service",
+                    Bank.CITI,
+                    Category.ENTERTAINMENT,
+                    "Stream Service",
                 ),
                 Transaction(
-                    date(2026, 2, 8), -120.0, "Dining", Bank.CITI,
-                    Category.DINING, "Dining"
+                    date(2026, 2, 8),
+                    -120.0,
+                    "Dining",
+                    Bank.CITI,
+                    Category.DINING,
+                    "Dining",
                 ),
                 Transaction(
-                    date(2026, 3, 5), -15.0, "Stream Service", Bank.CITI,
-                    Category.ENTERTAINMENT, "Stream Service"
+                    date(2026, 3, 5),
+                    -15.0,
+                    "Stream Service",
+                    Bank.CITI,
+                    Category.ENTERTAINMENT,
+                    "Stream Service",
                 ),
                 Transaction(
-                    date(2026, 3, 8), -140.0, "Dining", Bank.CITI,
-                    Category.DINING, "Dining"
+                    date(2026, 3, 8),
+                    -140.0,
+                    "Dining",
+                    Bank.CITI,
+                    Category.DINING,
+                    "Dining",
                 ),
             ],
         )
@@ -184,8 +213,12 @@ class HistoryAnalysisTests(unittest.TestCase):
             Bank.VENMO,
             [
                 Transaction(
-                    date(2026, 1, 5), -15.0, "Stream Service", Bank.VENMO,
-                    Category.ENTERTAINMENT, "Stream Service"
+                    date(2026, 1, 5),
+                    -15.0,
+                    "Stream Service",
+                    Bank.VENMO,
+                    Category.ENTERTAINMENT,
+                    "Stream Service",
                 )
             ],
         )
@@ -226,8 +259,8 @@ class HistoryAnalysisTests(unittest.TestCase):
         self.assertIn("HistoricalCategoryTrends", workbook["Category Trends"].tables)
         trends = workbook["Category Trends"]
         category_table = trends.tables["HistoricalCategoryTrends"]
-        min_column, min_row, max_column, max_row = (
-            openpyxl.utils.cell.range_boundaries(category_table.ref)
+        min_column, min_row, max_column, max_row = openpyxl.utils.cell.range_boundaries(
+            category_table.ref
         )
         headers = [
             trends.cell(row=min_row, column=column).value
@@ -236,8 +269,9 @@ class HistoryAnalysisTests(unittest.TestCase):
         category_column = min_column + headers.index("Category")
         total_column = min_column + headers.index("Total Spent")
         category_totals = {
-            trends.cell(row=row, column=category_column).value:
-            trends.cell(row=row, column=total_column).value
+            trends.cell(row=row, column=category_column)
+            .value: trends.cell(row=row, column=total_column)
+            .value
             for row in range(min_row + 1, max_row + 1)
         }
         self.assertEqual(category_totals["Dining"], 360.0)

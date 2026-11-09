@@ -42,8 +42,7 @@ class ParseBankStatementsTests(unittest.TestCase):
     def test_parses_generic_headers_and_parenthesized_amounts(self):
         path = self.write_csv(
             "my-export.csv",
-            "Transaction Date,Merchant,Amount\n"
-            "2025-02-01,Corner Store,(12.50)\n",
+            "Transaction Date,Merchant,Amount\n" "2025-02-01,Corner Store,(12.50)\n",
         )
 
         statement = self.parser.statement_from_file(None, path)
@@ -133,8 +132,7 @@ class ParseBankStatementsTests(unittest.TestCase):
         )
         path = self.write_csv(
             "generic.csv",
-            "Date,Description,Amount\n"
-            "2025-03-01,COFFEE SHOP #123,8.00\n",
+            "Date,Description,Amount\n" "2025-03-01,COFFEE SHOP #123,8.00\n",
         )
 
         statement = self.parser.statement_from_file(None, path)
@@ -197,8 +195,7 @@ class ParseBankStatementsTests(unittest.TestCase):
         )
         path = self.write_csv(
             "generic.csv",
-            "Date,Description,Amount\n"
-            "2025-03-01,Local Market #52,8.00\n",
+            "Date,Description,Amount\n" "2025-03-01,Local Market #52,8.00\n",
         )
 
         transaction = reloaded_parser.statement_from_file(None, path).transactions[0]
@@ -208,13 +205,10 @@ class ParseBankStatementsTests(unittest.TestCase):
 
     def test_custom_category_is_available_to_rules_and_imported_transactions(self):
         self.parser.save_category("Pet Care", 250.0)
-        self.parser.save_category_rule(
-            "pet supply", "Pet Supplies", "Pet Care"
-        )
+        self.parser.save_category_rule("pet supply", "Pet Supplies", "Pet Care")
         path = self.write_csv(
             "generic.csv",
-            "Date,Description,Amount\n"
-            "2025-03-01,Pet Supply Shop,-18.00\n",
+            "Date,Description,Amount\n" "2025-03-01,Pet Supply Shop,-18.00\n",
         )
 
         transaction = self.parser.statement_from_file(None, path).transactions[0]
@@ -247,7 +241,9 @@ class ParseBankStatementsTests(unittest.TestCase):
             "coffee", "Coffee", Category.DINING, match_type="exact"
         )
         self.parser.save_category_rule(
-            "cafeteria", "Cafe", Category.OTHER,
+            "cafeteria",
+            "Cafe",
+            Category.OTHER,
             match_type="contains",
             original_pattern="coffee",
         )
@@ -269,8 +265,7 @@ class ParseBankStatementsTests(unittest.TestCase):
         )
         path = self.write_csv(
             "generic.csv",
-            "Date,Description,Amount\n"
-            "2025-03-01,Internal Transfer,200.00\n",
+            "Date,Description,Amount\n" "2025-03-01,Internal Transfer,200.00\n",
         )
         target_path = os.path.join(self.temporary_directory.name, "targets.db")
         targets = CategoryTargetHandler(target_path)
@@ -283,8 +278,7 @@ class ParseBankStatementsTests(unittest.TestCase):
     def test_invalid_date_is_reported_instead_of_replaced_with_today(self):
         path = self.write_csv(
             "generic.csv",
-            "Date,Description,Amount\n"
-            "not-a-date,Corner Store,12.50\n",
+            "Date,Description,Amount\n" "not-a-date,Corner Store,12.50\n",
         )
 
         with self.assertRaisesRegex(ValueError, "row 2.*unrecognized transaction date"):
@@ -293,11 +287,12 @@ class ParseBankStatementsTests(unittest.TestCase):
     def test_non_finite_amount_is_rejected(self):
         path = self.write_csv(
             "generic.csv",
-            "Date,Description,Amount\n"
-            "2025-03-01,Corner Store,nan\n",
+            "Date,Description,Amount\n" "2025-03-01,Corner Store,nan\n",
         )
 
-        with self.assertRaisesRegex(ValueError, "row 2.*unrecognized transaction amount"):
+        with self.assertRaisesRegex(
+            ValueError, "row 2.*unrecognized transaction amount"
+        ):
             self.parser.statement_from_file(None, path)
 
 

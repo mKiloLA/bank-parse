@@ -9,7 +9,10 @@ The desktop interface uses a dark theme, opens at a screen-fitted size, and can 
 2. The app detects supported bank formats from their column headers and previews the transactions.
 3. Search and filter the transaction preview by merchant, category, source, or month.
 4. Review the uncategorized merchants and their source bank. Select one or more groups, choose a category, and apply it once to the whole group. Enter shorter **Rule Match Text** (for example, `google`) to match similar descriptions; blank uses the full transaction description. Choose **Contains** or **Exact**.
-5. Use **Monthly Overview** to compare spending and income with saved category targets.
+5. Use **Monthly Overview** to compare category spending with saved targets and
+   see monthly totals for spending, income, net income, budgeted amounts, and
+   unbudgeted income. Its **Trend Graph** compares category spending for the
+   selected month; toggle categories to update the selected-total bar and scale.
 6. Review potential duplicate transactions when prompted. Matches require the same date, amount, and place across different files.
 7. Export the categorized transactions to Excel.
 
@@ -47,6 +50,23 @@ On Ubuntu, install Tkinter if it is not already available:
 ```bash
 sudo apt install python3-tk
 ```
+
+## Development
+
+Install the development tools and run the checks:
+
+```bash
+python3 -m pip install -r requirements-dev.txt
+python3 -m pytest -q
+python3 -m flake8 StatementParser.py statement_parser tests
+python3 -m black --check StatementParser.py statement_parser tests
+python3 -m compileall -q statement_parser
+```
+
+VS Code launch configurations for the application, unit tests, Flake8, Black,
+and package compilation are available in `.vscode/launch.json`.
+See [the code structure guide](docs/code-structure.md) for module ownership
+and data-flow details.
 
 ## Installation (macOS)
 
